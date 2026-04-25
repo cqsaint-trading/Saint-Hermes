@@ -1,0 +1,3613 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>SAINT TERMINAL v6.0 · Trade Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================
+   SAINT TERMINAL v6.0 — Cyberpunk Crypto Terminal
+   Pure black / Neon green / Neon red
+   红涨 (bull=red) · 绿跌 (bear=green)
+   ========================================== */
+
+:root {
+  /* === BACKGROUNDS === */
+  --bg:#000000;
+  --bg-1:#050608;
+  --bg-2:#0a0c10;
+  --bg-3:#11141a;
+  --bg-4:#181c25;
+  --bg-hover:#1e232e;
+
+  /* === LINES === */
+  --line:rgba(255,255,255,0.06);
+  --line-2:rgba(255,255,255,0.11);
+  --line-3:rgba(255,255,255,0.20);
+  --grid:rgba(0,255,157,0.04);
+
+  /* === TEXT === */
+  --fg:#e8ecf2;
+  --fg-1:#b8bfcc;
+  --fg-2:#6b7383;
+  --fg-3:#3b424d;
+  --fg-4:#262b35;
+
+  /* === SEMANTIC (红涨绿跌) === */
+  --bull:#ff2e4e;        /* 涨/多头/盈利 */
+  --bull-glow:#ff3d5a;
+  --bull-dim:rgba(255,46,78,0.12);
+  --bull-dim-2:rgba(255,46,78,0.22);
+  --bull-shadow:rgba(255,46,78,0.45);
+
+  --bear:#00ff9d;        /* 跌/空头 */
+  --bear-glow:#3dffb5;
+  --bear-dim:rgba(0,255,157,0.10);
+  --bear-dim-2:rgba(0,255,157,0.20);
+  --bear-shadow:rgba(0,255,157,0.40);
+
+  /* win = red/bull (盈利), loss = green/bear colorized differently for text */
+  --win:#ff2e4e;
+  --loss:#00ff9d;     /* we'll use a cooler tone for loss to distinguish from short */
+  --be:#ffb454;
+
+  /* === ACCENTS === */
+  --amber:#ffb454;
+  --cyan:#00d4ff;
+  --purple:#b57cff;
+  --pink:#ff5ed4;
+
+  /* === TYPE === */
+  --mono:'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
+  --sans:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --radius:4px;
+  --radius-lg:8px;
+
+  --sidebar-w:200px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+*::selection { background:var(--bull-dim-2); color:var(--bull-glow); }
+
+html, body {
+  background:var(--bg);
+  color:var(--fg);
+  font-family:var(--sans);
+  font-size:13px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* === SCANLINE BG === */
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    linear-gradient(to bottom, transparent 0%, transparent calc(100% - 1px), rgba(0,255,157,0.015) 100%) 0 0/100% 3px,
+    radial-gradient(ellipse at top, rgba(255,46,78,0.04), transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(0,255,157,0.025), transparent 60%);
+  pointer-events:none;
+  z-index:0;
+}
+
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--line-2); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:var(--line-3); }
+
+/* ==== APP LAYOUT ==== */
+.app { display:flex; min-height:100vh; position:relative; z-index:1; }
+
+.sidebar {
+  width:var(--sidebar-w);
+  flex-shrink:0;
+  background:var(--bg-1);
+  border-right:1px solid var(--line);
+  display:flex;
+  flex-direction:column;
+  position:fixed;
+  top:0; left:0; bottom:0;
+  z-index:80;
+  transition:transform .25s ease;
+}
+
+.logo-block {
+  padding:16px 18px 14px;
+  border-bottom:1px solid var(--line);
+}
+.logo-row { display:flex; align-items:center; gap:8px; }
+.logo-pulse {
+  width:8px; height:8px;
+  background:var(--bull);
+  box-shadow:0 0 12px var(--bull-shadow), 0 0 4px var(--bull);
+  animation:pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:.5; transform:scale(.85); }
+}
+.logo-name {
+  font-family:var(--mono);
+  font-size:14px;
+  font-weight:600;
+  color:#fff;
+  letter-spacing:2px;
+}
+.logo-ver {
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--fg-3);
+  letter-spacing:1.5px;
+  margin-top:6px;
+}
+
+.sys-status {
+  padding:10px 18px;
+  border-bottom:1px solid var(--line);
+  font-family:var(--mono);
+  font-size:10px;
+}
+.sys-row { display:flex; justify-content:space-between; padding:2px 0; color:var(--fg-2); }
+.sys-row .val { color:var(--fg); }
+.sys-row .val.live { color:var(--bear); }
+.sys-row .val.live::before { content:'●'; margin-right:4px; animation:blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity:.2; } }
+
+.nav { flex:1; padding:10px 8px; overflow-y:auto; }
+.nav-label {
+  font-family:var(--mono);
+  font-size:9px;
+  color:var(--fg-3);
+  letter-spacing:2px;
+  padding:14px 10px 6px;
+}
+.nav-label:first-child { padding-top:4px; }
+.nav-item {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 10px;
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--fg-2);
+  cursor:pointer;
+  border-left:2px solid transparent;
+  transition:all .12s ease;
+  user-select:none;
+  letter-spacing:.3px;
+}
+.nav-item .tag { font-size:9px; color:var(--fg-3); margin-left:auto; }
+.nav-item:hover { color:var(--fg); background:var(--bg-2); }
+.nav-item.active {
+  color:var(--bull);
+  background:var(--bull-dim);
+  border-left-color:var(--bull);
+  text-shadow:0 0 8px var(--bull-shadow);
+}
+.nav-item.active .tag { color:var(--bull); }
+
+.sidebar-foot {
+  border-top:1px solid var(--line);
+  padding:12px 16px;
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--fg-3);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.sidebar-foot .user { color:var(--fg-1); }
+.sidebar-foot .uid { color:var(--bear); }
+
+/* ==== MAIN ==== */
+.main {
+  flex:1;
+  margin-left:var(--sidebar-w);
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+.topbar {
+  height:44px;
+  border-bottom:1px solid var(--line);
+  background:var(--bg-1);
+  display:flex;
+  align-items:center;
+  padding:0 20px;
+  gap:16px;
+  position:sticky;
+  top:0;
+  z-index:40;
+  font-family:var(--mono);
+  font-size:12px;
+}
+.topbar-title {
+  color:var(--fg);
+  font-weight:500;
+  letter-spacing:1px;
+}
+.topbar-title::before { content:'> '; color:var(--bull); }
+.topbar-sep { width:1px; height:18px; background:var(--line-2); }
+.topbar-item { color:var(--fg-2); display:flex; align-items:center; gap:6px; }
+.topbar-item .lbl { color:var(--fg-3); font-size:10px; letter-spacing:1.5px; }
+.topbar-item .v { color:var(--fg); }
+.topbar-item .v.pos { color:var(--bull); }
+.topbar-item .v.neg { color:var(--bear); }
+.topbar-right { margin-left:auto; display:flex; gap:14px; align-items:center; }
+.clock { color:var(--bear); font-variant-numeric:tabular-nums; }
+.clock::before { content:'⌚ '; }
+
+.hamburger {
+  display:none;
+  width:32px; height:32px;
+  background:var(--bg-2);
+  border:1px solid var(--line-2);
+  cursor:pointer;
+  align-items:center;
+  justify-content:center;
+  color:var(--fg);
+  font-size:16px;
+}
+
+.content { padding:20px; flex:1; }
+.page { display:none; }
+.page.active { display:block; animation:pageIn .28s cubic-bezier(.2,.9,.2,1); }
+@keyframes pageIn {
+  from { opacity:0; transform:translateY(6px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* === ASCII-style panel chrome === */
+.panel {
+  background:var(--bg-1);
+  border:1px solid var(--line);
+  position:relative;
+}
+.panel::before, .panel::after {
+  content:'';
+  position:absolute;
+  width:8px; height:8px;
+  border:1px solid var(--bull);
+  opacity:.8;
+}
+.panel::before { top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.panel::after { bottom:-1px; right:-1px; border-left:none; border-top:none; }
+
+.panel-hd {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:8px 14px;
+  border-bottom:1px solid var(--line);
+  background:var(--bg-2);
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:1.5px;
+  color:var(--fg-1);
+  text-transform:uppercase;
+}
+.panel-hd .title { display:flex; align-items:center; gap:8px; }
+.panel-hd .title::before {
+  content:'';
+  width:6px; height:6px;
+  background:var(--bear);
+  box-shadow:0 0 6px var(--bear-shadow);
+  animation:blink 1.4s steps(2) infinite;
+}
+.panel-hd .sub { color:var(--fg-3); font-size:10px; }
+.panel-body { padding:16px; }
+.panel-body.tight { padding:0; }
+
+/* === KPI === */
+.kpi-row {
+  display:grid;
+  grid-template-columns:repeat(6, 1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+.kpi {
+  background:var(--bg-1);
+  border:1px solid var(--line);
+  padding:12px 14px;
+  position:relative;
+  overflow:hidden;
+}
+.kpi::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:2px;
+  background:var(--accent, var(--line-2));
+  box-shadow:0 0 8px var(--accent, transparent);
+}
+.kpi-label {
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:1.8px;
+  color:var(--fg-3);
+  text-transform:uppercase;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.kpi-label .dot {
+  width:5px; height:5px;
+  background:var(--accent, var(--fg-3));
+  box-shadow:0 0 5px var(--accent, transparent);
+}
+.kpi-value {
+  font-family:var(--mono);
+  font-size:22px;
+  font-weight:500;
+  color:#fff;
+  margin-top:8px;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-0.3px;
+}
+.kpi-value.pos { color:var(--bull); text-shadow:0 0 14px var(--bull-shadow); }
+.kpi-value.neg { color:var(--bear); text-shadow:0 0 14px var(--bear-shadow); }
+.kpi-value.warn { color:var(--amber); text-shadow:0 0 14px rgba(255,180,84,.4); }
+.kpi-value.cyan { color:var(--cyan); text-shadow:0 0 14px rgba(0,212,255,.35); }
+.kpi-sub {
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--fg-2);
+  margin-top:6px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.kpi-sub .delta.pos { color:var(--bull); }
+.kpi-sub .delta.neg { color:var(--bear); }
+.kpi-spark {
+  position:absolute;
+  right:8px; bottom:8px;
+  width:46px; height:18px;
+  opacity:.7;
+}
+
+/* === LAYOUT === */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px; }
+.grid-23 { display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px; }
+.grid-32 { display:grid; grid-template-columns:1fr 2fr; gap:14px; margin-bottom:14px; }
+.stack { display:flex; flex-direction:column; gap:14px; }
+
+/* === TAGS === */
+.tag {
+  display:inline-flex;
+  align-items:center;
+  padding:1px 7px;
+  font-family:var(--mono);
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:.5px;
+  border:1px solid currentColor;
+  line-height:1.6;
+}
+.tag-long { color:var(--bull); background:var(--bull-dim); }
+.tag-short { color:var(--bear); background:var(--bear-dim); }
+.tag-win { color:var(--bull); background:var(--bull-dim); }
+.tag-loss { color:var(--bear); background:var(--bear-dim); }
+.tag-be { color:var(--amber); background:rgba(255,180,84,.08); }
+.tag-missed { color:var(--cyan); background:rgba(0,212,255,.08); border-color:rgba(0,212,255,.2); }
+.tag-review { color:var(--purple); background:rgba(181,124,255,.10); }
+.tag-a { color:var(--bull); background:var(--bull-dim); }
+.tag-b { color:var(--cyan); background:rgba(0,212,255,.10); }
+.tag-c { color:var(--fg-2); background:rgba(255,255,255,.04); }
+.tag-s { color:var(--purple); background:rgba(181,124,255,.12); }
+
+.mom {
+  font-family:var(--mono);
+  font-size:10px;
+  font-weight:600;
+  padding:1px 6px;
+  border:1px solid currentColor;
+}
+.mom.S { color:var(--purple); }
+.mom.A { color:var(--bull); }
+.mom.B { color:var(--cyan); }
+.mom.C { color:var(--fg-2); }
+
+/* === TABLE === */
+.tbl { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12px; }
+.tbl th {
+  text-align:left;
+  padding:8px 14px;
+  font-size:10px;
+  letter-spacing:1.5px;
+  color:var(--fg-3);
+  font-weight:500;
+  border-bottom:1px solid var(--line);
+  background:var(--bg-2);
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.tbl td {
+  padding:10px 14px;
+  border-bottom:1px solid var(--line);
+  font-variant-numeric:tabular-nums;
+  vertical-align:middle;
+}
+.tbl tbody tr { transition:background .1s; cursor:pointer; }
+.tbl tbody tr:hover td { background:var(--bg-2); }
+.tbl tbody tr:last-child td { border-bottom:none; }
+.pos { color:var(--bull); }
+.neg { color:var(--bear); }
+.zero { color:var(--fg-2); }
+.num { font-variant-numeric:tabular-nums; }
+
+.ellipsis { max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* === BARS === */
+.bars { display:flex; flex-direction:column; gap:10px; }
+.bar-row {
+  display:grid;
+  grid-template-columns:70px 1fr 60px;
+  gap:10px;
+  align-items:center;
+  font-family:var(--mono);
+  font-size:11px;
+}
+.bar-lbl { color:var(--fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bar-track {
+  height:14px;
+  background:var(--bg-3);
+  position:relative;
+  border:1px solid var(--line);
+}
+.bar-fill {
+  height:100%;
+  background:var(--bar-col, var(--bull));
+  box-shadow:0 0 8px var(--bar-col, var(--bull-shadow));
+  transition:width 1s cubic-bezier(.2,.9,.2,1);
+  position:relative;
+  background-image:linear-gradient(90deg, transparent 0%, rgba(255,255,255,.15) 50%, transparent 100%);
+  background-size:40px 100%;
+  animation:shimmer 2s linear infinite;
+}
+@keyframes shimmer {
+  0% { background-position:-40px 0; }
+  100% { background-position:calc(100% + 40px) 0; }
+}
+.bar-val { text-align:right; color:var(--fg); font-variant-numeric:tabular-nums; }
+.bar-val.neg { color:var(--bear); }
+
+/* === CALENDAR === */
+.cal {
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:3px;
+}
+.cal-dow {
+  text-align:center;
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:1.5px;
+  color:var(--fg-3);
+  padding:6px 2px;
+}
+.cal-day {
+  aspect-ratio:1.2;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  padding:5px 6px 6px;
+  font-family:var(--mono);
+  font-size:10px;
+  border:1px solid var(--line);
+  background:var(--bg-2);
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+  transition:all .15s;
+}
+.cal-day:hover { border-color:var(--line-3); transform:translateY(-1px); }
+.cal-day .d-num {
+  font-size:10px;
+  color:var(--fg-2);
+  line-height:1;
+  margin-bottom:2px;
+}
+.cal-day .d-pnl {
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:-0.5px;
+}
+.cal-day.empty { opacity:.25; cursor:default; }
+.cal-day.empty:hover { transform:none; border-color:var(--line); }
+.cal-day.today { border-color:var(--bull); box-shadow:0 0 8px var(--bull-shadow); }
+
+.cal-day.win-1 { background:rgba(255,46,78,0.12); border-color:rgba(255,46,78,0.25); }
+.cal-day.win-2 { background:rgba(255,46,78,0.22); border-color:rgba(255,46,78,0.4); }
+.cal-day.win-3 { background:rgba(255,46,78,0.38); border-color:rgba(255,46,78,0.6); box-shadow:inset 0 0 14px rgba(255,46,78,0.2); }
+.cal-day.loss-1 { background:rgba(0,255,157,0.10); border-color:rgba(0,255,157,0.25); }
+.cal-day.loss-2 { background:rgba(0,255,157,0.18); border-color:rgba(0,255,157,0.4); }
+.cal-day.win-1 .d-pnl, .cal-day.win-2 .d-pnl, .cal-day.win-3 .d-pnl { color:var(--bull); }
+.cal-day.loss-1 .d-pnl, .cal-day.loss-2 .d-pnl { color:var(--bear); }
+.cal-day.be { background:rgba(255,180,84,.08); border-color:rgba(255,180,84,.2); }
+.cal-day.be .d-pnl { color:var(--amber); }
+
+/* === EQUITY === */
+.equity-wrap { position:relative; height:200px; padding:10px 0; }
+.equity-svg { width:100%; height:100%; display:block; }
+
+/* === RING === */
+.ring-wrap {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:10px 0 0;
+  position:relative;
+}
+.ring-svg { width:160px; height:160px; }
+.ring-center {
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%,-38%);
+  text-align:center;
+}
+.ring-center .big {
+  font-family:var(--mono);
+  font-size:28px;
+  font-weight:500;
+  color:var(--bull);
+  text-shadow:0 0 14px var(--bull-shadow);
+  font-variant-numeric:tabular-nums;
+}
+.ring-center .lbl {
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--fg-3);
+  letter-spacing:1.5px;
+  margin-top:2px;
+}
+.ring-legend {
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  margin-top:12px;
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--fg-2);
+}
+.ring-legend span { display:inline-flex; align-items:center; gap:5px; }
+.ring-legend .sw {
+  width:8px; height:8px;
+}
+.ring-legend .sw.w { background:var(--bull); box-shadow:0 0 6px var(--bull-shadow); }
+.ring-legend .sw.l { background:var(--bear); box-shadow:0 0 6px var(--bear-shadow); }
+.ring-legend .sw.b { background:var(--amber); }
+
+/* === TICKER === */
+.ticker {
+  border:1px solid var(--line);
+  background:var(--bg-1);
+  padding:6px 0;
+  overflow:hidden;
+  white-space:nowrap;
+  font-family:var(--mono);
+  font-size:11px;
+  margin-bottom:14px;
+  position:relative;
+}
+.ticker-inner {
+  display:inline-block;
+  animation:tick 60s linear infinite;
+  padding-left:100%;
+}
+.ticker:hover .ticker-inner { animation-play-state:paused; }
+@keyframes tick {
+  0% { transform:translateX(0); }
+  100% { transform:translateX(-100%); }
+}
+.tick-item {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-right:24px;
+  color:var(--fg-2);
+}
+.tick-item .sym { color:var(--fg); letter-spacing:1px; }
+.tick-item .p { font-variant-numeric:tabular-nums; }
+.tick-item .chg.pos { color:var(--bull); }
+.tick-item .chg.neg { color:var(--bear); }
+.tick-item::before { content:'◆'; color:var(--fg-3); font-size:8px; margin-right:4px; }
+
+/* === FORM === */
+.form-section { margin-bottom:22px; }
+.form-section-title {
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:2px;
+  color:var(--fg-2);
+  text-transform:uppercase;
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.form-section-title::before { content:'['; color:var(--bull); }
+.form-section-title::after { content:']'; color:var(--bull); margin-right:6px; }
+.form-section-title .line { flex:1; height:1px; background:var(--line); }
+
+.form-grid-4 { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; }
+.form-grid-3 { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+.form-grid-2 { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; }
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-label {
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:1.5px;
+  color:var(--fg-3);
+  text-transform:uppercase;
+}
+.form-label .req { color:var(--bull); margin-left:2px; }
+.form-input, .form-select, .form-textarea {
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  padding:8px 10px;
+  color:var(--fg);
+  font-family:var(--mono);
+  font-size:12px;
+  outline:none;
+  transition:border-color .15s, background .15s;
+  width:100%;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color:var(--bull);
+  background:var(--bg-3);
+  box-shadow:0 0 0 3px var(--bull-dim);
+}
+.form-textarea { resize:vertical; min-height:70px; line-height:1.6; }
+
+.check-grid {
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:6px;
+}
+.check-item {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--fg-2);
+  cursor:pointer;
+  user-select:none;
+  transition:all .12s;
+}
+.check-item:hover { border-color:var(--line-2); color:var(--fg); }
+.check-item.on {
+  border-color:var(--bull);
+  color:var(--bull);
+  background:var(--bull-dim);
+}
+.check-dot {
+  width:8px; height:8px;
+  border:1px solid currentColor;
+  flex-shrink:0;
+  position:relative;
+}
+.check-item.on .check-dot {
+  background:var(--bull);
+  box-shadow:0 0 6px var(--bull-shadow);
+}
+
+/* === BUTTONS === */
+.btn {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 14px;
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  background:transparent;
+  color:var(--fg-1);
+  border:1px solid var(--line-2);
+  cursor:pointer;
+  transition:all .15s;
+}
+.btn:hover { color:var(--fg); border-color:var(--line-3); background:var(--bg-2); }
+.btn-primary {
+  background:var(--bull);
+  color:#000;
+  border-color:var(--bull);
+  font-weight:600;
+}
+.btn-primary:hover {
+  background:var(--bull-glow);
+  box-shadow:0 0 16px var(--bull-shadow);
+  color:#000;
+}
+.btn-bear { background:var(--bear); color:#000; border-color:var(--bear); font-weight:600; }
+.btn-bear:hover { box-shadow:0 0 16px var(--bear-shadow); color:#000; }
+.btn-sm { padding:5px 10px; font-size:10px; }
+
+/* === FILTERS === */
+.filter-bar {
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+  padding:10px 14px;
+  background:var(--bg-1);
+  border:1px solid var(--line);
+}
+.filter-bar .form-select { width:auto; padding:6px 10px; font-size:11px; }
+.filter-bar .lbl { font-family:var(--mono); font-size:10px; color:var(--fg-3); letter-spacing:1px; text-transform:uppercase; }
+
+/* === MODAL === */
+.modal-bg {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.85);
+  backdrop-filter:blur(3px);
+  z-index:200;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.modal-bg.show { display:flex; animation:fadeIn .2s; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.modal {
+  background:var(--bg-1);
+  border:1px solid var(--line-3);
+  width:100%;
+  max-width:860px;
+  max-height:88vh;
+  overflow-y:auto;
+  position:relative;
+}
+.modal::before, .modal::after {
+  content:'';
+  position:absolute;
+  width:12px; height:12px;
+  border:1px solid var(--bull);
+}
+.modal::before { top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.modal::after { bottom:-1px; right:-1px; border-left:none; border-top:none; }
+.modal-hd {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 20px;
+  border-bottom:1px solid var(--line);
+  background:var(--bg-2);
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+}
+.modal-close {
+  background:transparent;
+  border:1px solid var(--line-2);
+  color:var(--fg-2);
+  width:24px; height:24px;
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:12px;
+}
+.modal-close:hover { color:var(--bull); border-color:var(--bull); }
+.modal-body { padding:20px; }
+
+/* === RESPONSIVE / MOBILE === */
+@media (max-width: 960px) {
+  .kpi-row { grid-template-columns:repeat(3, 1fr); }
+  .grid-23, .grid-32 { grid-template-columns:1fr; }
+  .form-grid-4 { grid-template-columns:repeat(2, 1fr); }
+  .check-grid { grid-template-columns:repeat(2, 1fr); }
+}
+
+@media (max-width: 720px) {
+  .hamburger { display:flex; }
+  .sidebar { transform:translateX(-100%); box-shadow:0 0 30px rgba(0,0,0,0.8); }
+  .sidebar.open { transform:translateX(0); }
+  .main { margin-left:0; }
+  .kpi-row { grid-template-columns:repeat(2, 1fr); gap:8px; }
+  .grid-2, .grid-3 { grid-template-columns:1fr; gap:10px; }
+  .topbar { padding:0 12px; gap:10px; }
+  .topbar-item:nth-child(n+4) { display:none; }
+  .content { padding:14px 12px; }
+  .form-grid-4, .form-grid-3, .form-grid-2 { grid-template-columns:1fr 1fr; }
+  .tbl-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .tbl { min-width:780px; }
+  .kpi-value { font-size:18px; }
+  .filter-bar { padding:8px 10px; }
+  .filter-bar .form-select { font-size:10px; }
+  .check-grid { grid-template-columns:1fr 1fr; }
+  .cal-day { font-size:9px; padding:3px; }
+  .cal-day .d-num { font-size:9px; }
+  .cal-day .d-pnl { font-size:11px; }
+}
+
+.drawer-scrim {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  z-index:70;
+}
+.drawer-scrim.show { display:block; }
+@media (min-width: 721px) {
+  .drawer-scrim { display:none !important; }
+}
+
+/* FAB mobile */
+.fab {
+  display:none;
+  position:fixed;
+  bottom:20px; right:20px;
+  width:52px; height:52px;
+  background:var(--bull);
+  color:#000;
+  border:none;
+  z-index:60;
+  cursor:pointer;
+  font-size:22px;
+  font-weight:700;
+  box-shadow:0 0 20px var(--bull-shadow);
+  border-radius:50%;
+}
+@media (max-width: 720px) {
+  .fab { display:flex; align-items:center; justify-content:center; }
+}
+
+/* === MISC === */
+.code-block {
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  padding:12px 14px;
+  font-family:var(--mono);
+  font-size:11px;
+  line-height:1.7;
+  color:var(--fg-1);
+  white-space:pre-wrap;
+  max-height:280px;
+  overflow-y:auto;
+}
+.code-block .k { color:var(--bull); }
+.code-block .s { color:var(--bear); }
+.code-block .c { color:var(--fg-3); }
+
+.hint {
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--fg-2);
+  line-height:1.8;
+  background:var(--bg-2);
+  border-left:2px solid var(--bull);
+  padding:10px 14px;
+  margin-bottom:14px;
+}
+
+.empty-st {
+  text-align:center;
+  padding:40px 20px;
+  color:var(--fg-3);
+  font-family:var(--mono);
+  font-size:11px;
+}
+
+/* image upload */
+.img-drop {
+  border:1px dashed var(--line-3);
+  padding:18px;
+  text-align:center;
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--fg-2);
+  transition:all .15s;
+}
+.img-drop:hover { border-color:var(--bull); color:var(--bull); background:var(--bull-dim); }
+.img-grid {
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:8px;
+  margin-top:10px;
+}
+.img-thumb {
+  aspect-ratio:16/10;
+  background:var(--bg-3);
+  border:1px solid var(--line);
+  position:relative;
+  overflow:hidden;
+}
+.img-thumb img { width:100%; height:100%; object-fit:cover; }
+
+/* 历史图表缩略图网格（只读） */
+.img-gallery {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6px;
+  margin-top:12px;
+}
+.img-gallery-thumb {
+  aspect-ratio:16/10;
+  background:var(--bg-3);
+  border:1px solid var(--line);
+  position:relative;
+  overflow:hidden;
+  cursor:zoom-in;
+  transition:border-color .15s;
+}
+.img-gallery-thumb:hover { border-color:var(--bull); }
+.img-gallery-thumb:hover::after {
+  content:'⤢';
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+  color:var(--bull);
+  background:rgba(0,0,0,0.5);
+}
+.img-gallery-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+
+/* 灯箱 Lightbox */
+.lightbox-bg {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.96);
+  z-index:999;
+  align-items:center;
+  justify-content:center;
+  animation:fadeIn .15s;
+}
+.lightbox-bg.show { display:flex; }
+.lightbox-img-wrap {
+  position:relative;
+  max-width:92vw;
+  max-height:88vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.lightbox-img-wrap img {
+  max-width:92vw;
+  max-height:88vh;
+  object-fit:contain;
+  border:1px solid var(--line-2);
+  display:block;
+}
+.lightbox-close {
+  position:fixed;
+  top:16px; right:20px;
+  background:transparent;
+  border:1px solid var(--line-2);
+  color:var(--fg-2);
+  width:32px; height:32px;
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:18px;
+  z-index:1000;
+  transition:all .15s;
+}
+.lightbox-close:hover { color:var(--bull); border-color:var(--bull); }
+.lightbox-nav {
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  background:rgba(0,0,0,0.6);
+  border:1px solid var(--line-2);
+  color:var(--fg-1);
+  width:40px; height:60px;
+  cursor:pointer;
+  font-size:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+  transition:all .15s;
+}
+.lightbox-nav:hover { color:var(--bull); border-color:var(--bull); background:var(--bull-dim); }
+.lightbox-nav.prev { left:12px; }
+.lightbox-nav.next { right:12px; }
+.lightbox-counter {
+  position:fixed;
+  bottom:16px;
+  left:50%;
+  transform:translateX(-50%);
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--fg-2);
+  letter-spacing:2px;
+}
+
+/* Top bar counters */
+.glitch-num {
+  display:inline-block;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Ticker bar (market feed) */
+.mini-tick {
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  font-family:var(--mono);
+  font-size:11px;
+}
+.mini-tick .up { color:var(--bull); }
+.mini-tick .dn { color:var(--bear); }
+.mini-tick .pulse { width:5px; height:5px; background:currentColor; box-shadow:0 0 6px currentColor; animation:blink 1s steps(2) infinite; }
+
+
+/* ===== LIGHT THEME ===== */
+html[data-theme='light'] {
+  --bg:#f5f5f0; --bg-1:#eaeae4; --bg-2:#e0e0d8; --bg-3:#d4d4cc;
+  --line:#c8c8bd; --line-2:#b8b8ac;
+  --fg:#1a1a1a; --fg-1:#2a2a2a; --fg-2:#4a4a4a; --fg-3:#6a6a6a;
+  --bull:#d10025; --bull-dim:rgba(209,0,37,0.08); --bull-dim-2:rgba(209,0,37,0.25); --bull-shadow:rgba(209,0,37,0.35);
+  --bear:#008050; --bear-dim:rgba(0,128,80,0.08); --bear-dim-2:rgba(0,128,80,0.25); --bear-shadow:rgba(0,128,80,0.35);
+  --amber:#b8770f; --cyan:#007a99; --purple:#7a3ab8;
+}
+html[data-theme='light'] body { background:var(--bg); color:var(--fg); }
+html[data-theme='light'] .scanlines { display:none; }
+html[data-theme='light'] .kpi-value, html[data-theme='light'] .v, html[data-theme='light'] .big {
+  text-shadow: none !important;
+}
+html[data-theme='light'] .panel, html[data-theme='light'] .kpi { background:#fdfdf8; }
+
+/* Topbar toggle buttons */
+.tb-btn {
+  background: transparent;
+  border: 1px solid var(--line-2);
+  color: var(--fg-2);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition: all .15s;
+  margin-right: 6px;
+}
+.tb-btn:hover {
+  border-color: var(--bull);
+  color: var(--bull);
+  box-shadow: 0 0 8px var(--bull-shadow);
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<script>
+// Generated mock trading data — 42 records
+window.MOCK_TRADES = (function(){
+  const symbols = ['GBPUSD','XAUUSD','BTCUSDT','EURUSD','NAS100'];
+  const dirs = ['LONG','SHORT'];
+  const sessions = ['欧盘','重叠','亚盘','美盘'];
+  const results = ['WIN','WIN','WIN','WIN','LOSS','LOSS','BE'];
+  const markets = ['单边多头','单边空头','结构上涨','结构下跌','箱体震荡'];
+  const zones = ['OB','FVG','OB+FVG','IFVG','BB'];
+  const patterns = ['S级挂单','A级挂单','B级挂单','信号棒触发','长影线拒绝','双底/双顶','1M FVG位移','BB反向','IFVG反向'];
+  const grades = ['S','A','A','A','B','B','C'];
+  const gradesMom = ['S','A','A','B','B','C'];
+  const sweeps = ['PDH','PDL','亚盘高','亚盘低','结构流动性'];
+  const structs = ['外部结构','内部结构'];
+  const beLevels = ['1档','2档','3档',''];
+  const chochs = ['A','B','C','D'];
+  const tfs = ['15M','15M+5M','5M'];
+  const sigBars = ['H2触发','L2触发','未等到'];
+  const notes = [
+    '完美L2触发 信号棒清晰 BE自动移到1:1',
+    'OB+FVG叠加 亚盘高扫损 结构明确',
+    'PDH扫损后反向 BB级入场 精度高',
+    '情绪化进场 破坏纪律 止损扫脸',
+    '等待过久 错过信号棒 后期追单扫损',
+    '分钟级位移确认 15M结构一致',
+    'C类信号强行做 违反系统 减仓保命',
+    '二次入场捕捉CHoCH 路径B完整',
+    '重叠时段 机械化执行 无情绪',
+    '被反向FVG拒绝 及时止损 1档BE保本'
+  ];
+
+  const rng = (seed => () => { seed = (seed*9301+49297) % 233280; return seed/233280; })(42);
+  const pick = arr => arr[Math.floor(rng()*arr.length)];
+  const pickInt = (a,b) => Math.floor(rng()*(b-a+1))+a;
+
+  const data = [];
+  const now = new Date('2026-04-18T20:00');
+  for (let i=0; i<42; i++){
+    const daysBack = Math.floor(i/1.3);
+    const d = new Date(now.getTime() - daysBack*24*3600*1000 - pickInt(0,8)*3600*1000);
+    const dt = d.toISOString().slice(0,16);
+    const sym = pick(symbols);
+    const dir = pick(dirs);
+    const result = pick(results);
+    let entry, sl, exit;
+    if (sym === 'XAUUSD') { entry = 3200 + rng()*100; sl = dir==='LONG'? entry - (5+rng()*8) : entry + (5+rng()*8); }
+    else if (sym === 'BTCUSDT') { entry = 65000 + rng()*5000; sl = dir==='LONG'? entry - (300+rng()*500) : entry + (300+rng()*500); }
+    else if (sym === 'NAS100') { entry = 18000 + rng()*500; sl = dir==='LONG'? entry - (30+rng()*50) : entry + (30+rng()*50); }
+    else { entry = 1.25 + rng()*0.1; sl = dir==='LONG'? entry - (0.0012+rng()*0.0020) : entry + (0.0012+rng()*0.0020); }
+    const risk = Math.abs(entry-sl);
+    let pnl;
+    if (result === 'WIN') pnl = +(1 + rng()*3.5).toFixed(2);
+    else if (result === 'LOSS') pnl = +(-0.5 - rng()*0.8).toFixed(2);
+    else pnl = 0;
+    exit = dir==='LONG' ? entry + (pnl*risk) : entry - (pnl*risk);
+    const score = result==='WIN' ? pickInt(72, 96) : result==='LOSS' ? pickInt(55,78) : pickInt(65, 82);
+    const grade = score >= 80 ? 'A' : score >= 70 ? 'B' : 'C';
+    data.push({
+      id: d.getTime()+i,
+      symbol: sym,
+      datetime: dt,
+      direction: dir,
+      session: pick(sessions),
+      entry: +entry.toFixed(sym.includes('USD')&&!sym.includes('X')?5:2),
+      sl: +sl.toFixed(sym.includes('USD')&&!sym.includes('X')?5:2),
+      tp1: null, tp2: null,
+      exit: +exit.toFixed(sym.includes('USD')&&!sym.includes('X')?5:2),
+      result, pnl, score, grade,
+      gradeMom: pick(gradesMom),
+      market: pick(markets),
+      struct: pick(structs),
+      pattern: pick(patterns),
+      zone: pick(zones),
+      signalBar: pick(sigBars),
+      sweepType: pick(sweeps),
+      beLevel: pick(beLevels),
+      chochPath: pick(chochs),
+      tf: pick(tfs),
+      checks: {
+        sweep: rng()>0.3, bos: rng()>0.25, ob: rng()>0.35, fvg: rng()>0.3,
+        ob_fvg: rng()>0.4, window: rng()>0.15, signal_bar: rng()>0.3, h2l2: rng()>0.5
+      },
+      aiAnalysis: '',
+      notes: pick(notes),
+      images: []
+    });
+  }
+  return data.sort((a,b)=> new Date(b.datetime) - new Date(a.datetime));
+})();
+
+</script>
+<script type="text/babel" data-src="store.jsx">
+// Shared utilities, state, hooks, and store
+// exposed on window for cross-file access
+
+const STORAGE_KEY = 'saint_v6';
+
+function loadTrades(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e){}
+  // seed with mock data
+  const seeded = window.MOCK_TRADES ? JSON.parse(JSON.stringify(window.MOCK_TRADES)) : [];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+  return seeded;
+}
+
+function saveTrades(d){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+}
+
+function useTrades(){
+  const [trades, setTrades] = React.useState(() => loadTrades());
+  const persist = React.useCallback((next) => {
+    setTrades(next);
+    saveTrades(next);
+  }, []);
+  return [trades, persist];
+}
+
+function useClock(){
+  const [t, setT] = React.useState(new Date());
+  React.useEffect(() => {
+    const i = setInterval(() => setT(new Date()), 1000);
+    return () => clearInterval(i);
+  }, []);
+  return t;
+}
+
+// Animated counter hook
+function useCountUp(target, dur=900){
+  const [val, setVal] = React.useState(0);
+  React.useEffect(() => {
+    if (target == null || isNaN(target)) { setVal(0); return; }
+    const t0 = performance.now();
+    const from = 0;
+    let raf;
+    const tick = (now) => {
+      const p = Math.min(1, (now - t0) / dur);
+      const eased = 1 - Math.pow(1-p, 3);
+      setVal(from + (target - from) * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, dur]);
+  return val;
+}
+
+function fmt(n, dp=2){
+  if (n == null || isNaN(n)) return '—';
+  return n.toLocaleString('en-US', { minimumFractionDigits:dp, maximumFractionDigits:dp });
+}
+function fmtR(n){
+  if (n == null || isNaN(n)) return '—';
+  const s = n > 0 ? '+' : '';
+  return s + n.toFixed(2) + 'R';
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+function clock(t){
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone:'America/New_York', hour12:false,
+    hour:'2-digit', minute:'2-digit', second:'2-digit'
+  }).formatToParts(t);
+  const get = k => parts.find(p=>p.type===k)?.value || '00';
+  const tz = new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',timeZoneName:'short'})
+    .formatToParts(t).find(p=>p.type==='timeZoneName')?.value || 'NY';
+  return `${get('hour')}:${get('minute')}:${get('second')} ${tz}`;
+}
+
+// Compute aggregate stats for a trade list
+function computeStats(trades){
+  const total = trades.length;
+  const closed = trades.filter(t => t.result && t.result !== '');
+  const wins = closed.filter(t => t.result === 'WIN');
+  const losses = closed.filter(t => t.result === 'LOSS');
+  const bes = closed.filter(t => t.result === 'BE');
+  const wr = closed.length ? (wins.length / closed.length) * 100 : 0;
+  const totalR = closed.reduce((s, t) => s + (t.pnl || 0), 0);
+  const avgWin = wins.length ? wins.reduce((s,t) => s+(t.pnl||0), 0) / wins.length : 0;
+  const avgLoss = losses.length ? Math.abs(losses.reduce((s,t)=>s+(t.pnl||0),0) / losses.length) : 0;
+  const rr = avgLoss ? avgWin / avgLoss : 0;
+  const expectancy = closed.length ? totalR / closed.length : 0;
+
+  // streaks
+  let curWin=0, curLoss=0, maxWin=0, maxLoss=0;
+  closed.slice().reverse().forEach(t => {
+    if (t.result === 'WIN') { curWin++; curLoss=0; maxWin=Math.max(maxWin,curWin); }
+    else if (t.result === 'LOSS') { curLoss++; curWin=0; maxLoss=Math.max(maxLoss,curLoss); }
+    else { curWin=0; curLoss=0; }
+  });
+
+  const grossWin = wins.reduce((s,t) => s+(t.pnl||0), 0);
+  const grossLoss = Math.abs(losses.reduce((s,t) => s+(t.pnl||0), 0));
+  const profitFactor = grossLoss > 0 ? +(grossWin / grossLoss).toFixed(2) : grossWin > 0 ? Infinity : 0;
+  return { total, closed:closed.length, wins:wins.length, losses:losses.length, bes:bes.length, wr, totalR, avgWin, avgLoss, rr, expectancy, maxWin, maxLoss, profitFactor };
+}
+
+// equity curve array
+function equityCurve(trades){
+  const closed = trades.filter(t => t.result && t.result !== '').slice().reverse();
+  let cum = 0;
+  return closed.map((t,i) => {
+    cum += (t.pnl || 0);
+    return { x:i, y:cum, t };
+  });
+}
+
+// group helper
+function groupBy(arr, key){
+  const m = {};
+  arr.forEach(r => {
+    const k = typeof key === 'function' ? key(r) : r[key];
+    if (!k) return;
+    (m[k] = m[k] || []).push(r);
+  });
+  return m;
+}
+
+function winRateOf(list){
+  const c = list.filter(t => t.result === 'WIN' || t.result === 'LOSS');
+  if (!c.length) return 0;
+  return (c.filter(t=>t.result==='WIN').length / c.length) * 100;
+}
+
+// expose
+Object.assign(window, {
+  STORAGE_KEY, loadTrades, saveTrades, useTrades, useClock,
+  useCountUp, fmt, fmtR, pad, clock, computeStats, equityCurve, groupBy, winRateOf
+});
+
+</script>
+<script type="text/babel" data-src="charts.jsx">
+// Chart components — SVG based, all with entry animations
+// Ring (win rate), EquityCurve, BarList, Sparkline, Calendar, Radar
+
+function Ring({ winRate, wins, losses, bes, size=160 }){
+  const stroke = 10;
+  const r = (size - stroke)/2;
+  const c = 2 * Math.PI * r;
+  const total = wins + losses + bes;
+
+  const [anim, setAnim] = React.useState(0);
+  React.useEffect(() => {
+    const t0 = performance.now();
+    let raf;
+    const tick = (now) => {
+      const p = Math.min(1, (now-t0)/1200);
+      const eased = 1 - Math.pow(1-p, 3);
+      setAnim(eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [winRate, wins, losses, bes]);
+
+  const wFrac = total ? wins/total : 0;
+  const lFrac = total ? losses/total : 0;
+  const bFrac = total ? bes/total : 0;
+
+  const wLen = c * wFrac * anim;
+  const lLen = c * lFrac * anim;
+  const bLen = c * bFrac * anim;
+
+  const rotate = -90;
+
+  const ringVal = useCountUp(winRate, 1200);
+
+  return (
+    <div className="ring-wrap">
+      <svg className="ring-svg" viewBox={`0 0 ${size} ${size}`}>
+        <defs>
+          <filter id="ring-glow">
+            <feGaussianBlur stdDeviation="2.5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={stroke}/>
+
+        <g transform={`rotate(${rotate} ${size/2} ${size/2})`}>
+          {/* wins */}
+          <circle cx={size/2} cy={size/2} r={r} fill="none"
+            stroke="#ff2e4e" strokeWidth={stroke}
+            strokeDasharray={`${wLen} ${c}`} strokeLinecap="butt"
+            filter="url(#ring-glow)"/>
+          {/* losses */}
+          <circle cx={size/2} cy={size/2} r={r} fill="none"
+            stroke="#00ff9d" strokeWidth={stroke}
+            strokeDasharray={`${lLen} ${c}`}
+            strokeDashoffset={-wLen} strokeLinecap="butt"
+            filter="url(#ring-glow)"/>
+          {/* bes */}
+          <circle cx={size/2} cy={size/2} r={r} fill="none"
+            stroke="#ffb454" strokeWidth={stroke}
+            strokeDasharray={`${bLen} ${c}`}
+            strokeDashoffset={-(wLen+lLen)} strokeLinecap="butt"/>
+        </g>
+        {/* ticks */}
+        {[0,25,50,75].map(a => {
+          const rad = (a - 90) * Math.PI/180;
+          const x1 = size/2 + (r-stroke/2-2)*Math.cos(rad);
+          const y1 = size/2 + (r-stroke/2-2)*Math.sin(rad);
+          const x2 = size/2 + (r+stroke/2+2)*Math.cos(rad);
+          const y2 = size/2 + (r+stroke/2+2)*Math.sin(rad);
+          return <line key={a} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>;
+        })}
+      </svg>
+      <div className="ring-center">
+        <div className="big">{ringVal.toFixed(1)}<span style={{fontSize:14, color:'var(--fg-2)', marginLeft:2}}>%</span></div>
+        <div className="lbl">WIN RATE</div>
+      </div>
+      <div className="ring-legend">
+        <span><div className="sw w"/>WIN {wins}</span>
+        <span><div className="sw l"/>LOSS {losses}</span>
+        <span><div className="sw b"/>BE {bes}</span>
+      </div>
+    </div>
+  );
+}
+
+function EquityCurve({ data, height=200 }){
+  const w = 800;
+  const h = height;
+  const pad = { t:10, b:20, l:40, r:10 };
+  const iw = w - pad.l - pad.r;
+  const ih = h - pad.t - pad.b;
+  const [anim, setAnim] = React.useState(0);
+
+  React.useEffect(() => {
+    const t0 = performance.now();
+    let raf;
+    const tick = (now) => {
+      const p = Math.min(1, (now-t0)/1400);
+      setAnim(p);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [data.length]);
+
+  if (!data.length) {
+    return <div className="empty-st">[ NO DATA ]</div>;
+  }
+
+  const maxY = Math.max(1, ...data.map(d => d.y));
+  const minY = Math.min(0, ...data.map(d => d.y));
+  const range = Math.max(0.1, maxY - minY);
+  const X = i => pad.l + (i / Math.max(1, data.length-1)) * iw;
+  const Y = v => pad.t + ih - ((v - minY) / range) * ih;
+
+  const pts = data.map((d,i) => `${X(i).toFixed(1)},${Y(d.y).toFixed(1)}`).join(' ');
+  const area = `M ${X(0)} ${Y(minY)} L ${pts.split(' ').join(' L ')} L ${X(data.length-1)} ${Y(minY)} Z`;
+
+  // clip animation — reveal from left
+  const clipW = iw * anim;
+
+  const last = data[data.length-1];
+
+  // y gridlines
+  const gridYs = [];
+  const step = range > 50 ? 10 : range > 20 ? 5 : range > 10 ? 2 : 1;
+  for (let v = Math.floor(minY/step)*step; v <= maxY; v += step) gridYs.push(v);
+
+  return (
+    <div className="equity-wrap">
+      <svg className="equity-svg" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="eq-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ff2e4e" stopOpacity="0.35"/>
+            <stop offset="100%" stopColor="#ff2e4e" stopOpacity="0"/>
+          </linearGradient>
+          <filter id="eq-glow">
+            <feGaussianBlur stdDeviation="3" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <clipPath id="eq-clip">
+            <rect x={pad.l} y="0" width={clipW} height={h}/>
+          </clipPath>
+        </defs>
+
+        {/* grid */}
+        {gridYs.map((v,i) => (
+          <g key={i}>
+            <line x1={pad.l} x2={w-pad.r} y1={Y(v)} y2={Y(v)} stroke="rgba(255,255,255,0.04)" strokeDasharray="2 3"/>
+            <text x={pad.l-6} y={Y(v)+3} fill="#3b424d" fontSize="9" fontFamily="IBM Plex Mono" textAnchor="end">{v>0?'+':''}{v}R</text>
+          </g>
+        ))}
+        {/* zero line */}
+        <line x1={pad.l} x2={w-pad.r} y1={Y(0)} y2={Y(0)} stroke="rgba(255,255,255,0.12)" strokeDasharray="4 4"/>
+
+        {/* area + line clipped by anim */}
+        <g clipPath="url(#eq-clip)">
+          <path d={area} fill="url(#eq-grad)"/>
+          <polyline points={pts} fill="none" stroke="#ff2e4e" strokeWidth="1.5" filter="url(#eq-glow)"/>
+        </g>
+
+        {/* pulse end point */}
+        {anim >= 0.99 && (
+          <g>
+            <circle cx={X(data.length-1)} cy={Y(last.y)} r="4" fill="#ff2e4e" filter="url(#eq-glow)">
+              <animate attributeName="r" values="3;7;3" dur="1.6s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="1;0.3;1" dur="1.6s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx={X(data.length-1)} cy={Y(last.y)} r="2.5" fill="#ff2e4e"/>
+            {/* label */}
+            <rect x={X(data.length-1)+8} y={Y(last.y)-10} width="58" height="18" fill="#000" stroke="#ff2e4e"/>
+            <text x={X(data.length-1)+12} y={Y(last.y)+3} fill="#ff2e4e" fontSize="10" fontFamily="IBM Plex Mono" fontWeight="600">
+              {last.y>0?'+':''}{last.y.toFixed(2)}R
+            </text>
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+}
+
+function BarList({ items, color, maxVal }){
+  // items: [{label, value, raw?}]
+  const max = maxVal || Math.max(1, ...items.map(i => Math.abs(i.value)));
+  const [anim, setAnim] = React.useState(false);
+  React.useEffect(() => {
+    const t = setTimeout(() => setAnim(true), 50);
+    return () => clearTimeout(t);
+  }, [items.map(i => i.label).join('|')]);
+
+  return (
+    <div className="bars">
+      {items.map((it, i) => {
+        const pct = Math.abs(it.value) / max * 100;
+        const col = it.color || color || 'var(--bull)';
+        return (
+          <div className="bar-row" key={it.label+i}>
+            <div className="bar-lbl" title={it.label}>{it.label}</div>
+            <div className="bar-track">
+              <div className="bar-fill"
+                style={{
+                  width: anim ? pct+'%' : '0%',
+                  '--bar-col': col,
+                  transitionDelay: (i*60)+'ms'
+                }}/>
+            </div>
+            <div className={"bar-val" + (it.value < 0 ? ' neg' : '')}>
+              {it.fmt ? it.fmt(it.value) : it.value.toFixed(1)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Sparkline({ data, color='var(--bull)', width=60, height=18 }){
+  if (!data || !data.length) return null;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const step = width / Math.max(1, data.length - 1);
+  const pts = data.map((v,i) => `${i*step},${height - ((v-min)/range)*height}`).join(' ');
+  return (
+    <svg width={width} height={height} style={{display:'block'}}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function Calendar({ trades, monthOffset, onDayClick }){
+  const now = new Date();
+  const target = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+  const year = target.getFullYear();
+  const month = target.getMonth();
+  const firstDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  // group trades by date
+  const byDate = {};
+  trades.forEach(t => {
+    if (!t.datetime) return;
+    const d = t.datetime.slice(0,10);
+    (byDate[d] = byDate[d] || []).push(t);
+  });
+
+  const cells = [];
+  const dowLabels = ['S','M','T','W','T','F','S'];
+  dowLabels.forEach((d,i) => cells.push(<div className="cal-dow" key={'dow'+i}>{d}</div>));
+  for (let i=0;i<firstDow;i++) cells.push(<div className="cal-day empty" key={'e'+i}></div>);
+  for (let d=1; d<=daysInMonth; d++){
+    const key = `${year}-${pad(month+1)}-${pad(d)}`;
+    const dayTrades = byDate[key] || [];
+    const pnl = dayTrades.reduce((s,t) => s+(t.pnl||0), 0);
+    const closed = dayTrades.filter(t => t.result);
+    let cls = '';
+    if (!closed.length && dayTrades.length) cls = 'be';
+    else if (pnl > 2.5) cls = 'win-3';
+    else if (pnl > 1) cls = 'win-2';
+    else if (pnl > 0) cls = 'win-1';
+    else if (pnl < -1) cls = 'loss-2';
+    else if (pnl < 0) cls = 'loss-1';
+    if (key === todayStr) cls += ' today';
+    cells.push(
+      <div key={key} className={'cal-day '+cls}
+        onClick={() => dayTrades.length && onDayClick && onDayClick(key, dayTrades)}
+        title={dayTrades.length ? `${dayTrades.length}笔 ${pnl>0?'+':''}${pnl.toFixed(2)}R` : ''}>
+        <div className="d-num">{d}</div>
+        {dayTrades.length > 0 && (
+          <div className="d-pnl">{pnl>0?'+':''}{pnl.toFixed(1)}R</div>
+        )}
+      </div>
+    );
+  }
+  return <div className="cal">{cells}</div>;
+}
+
+// Radar chart for momentum/zone distribution
+function Radar({ data, size=200 }){
+  // data: [{label, value}] — value 0..1
+  const cx = size/2, cy = size/2;
+  const r = size/2 - 22;
+  const n = data.length;
+  const [anim, setAnim] = React.useState(0);
+  React.useEffect(() => {
+    const t0 = performance.now();
+    let raf;
+    const tick = (now) => {
+      const p = Math.min(1, (now-t0)/1200);
+      const eased = 1 - Math.pow(1-p, 3);
+      setAnim(eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [data.map(d=>d.label).join('|')]);
+
+  const pt = (i, v) => {
+    const a = (i/n) * Math.PI * 2 - Math.PI/2;
+    return [cx + r * v * Math.cos(a), cy + r * v * Math.sin(a)];
+  };
+
+  const pts = data.map((d,i) => pt(i, d.value * anim).map(v=>v.toFixed(1)).join(',')).join(' ');
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <defs>
+        <filter id="radar-glow">
+          <feGaussianBlur stdDeviation="2" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      {[0.25, 0.5, 0.75, 1].map(k => (
+        <polygon key={k}
+          points={data.map((_,i)=>pt(i,k).map(v=>v.toFixed(1)).join(',')).join(' ')}
+          fill="none" stroke="rgba(255,255,255,0.06)"/>
+      ))}
+      {data.map((_,i) => {
+        const [x,y] = pt(i, 1);
+        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(255,255,255,0.06)"/>;
+      })}
+      <polygon points={pts} fill="rgba(255,46,78,0.15)" stroke="#ff2e4e" strokeWidth="1.5" filter="url(#radar-glow)"/>
+      {data.map((d,i) => {
+        const [x,y] = pt(i, 1.15);
+        return <text key={i} x={x} y={y+3} textAnchor="middle"
+          fill="#6b7383" fontSize="9" fontFamily="IBM Plex Mono"
+          style={{letterSpacing:'.5px'}}>{d.label}</text>;
+      })}
+      {data.map((d,i) => {
+        const [x,y] = pt(i, d.value * anim);
+        return <circle key={i} cx={x} cy={y} r="2.5" fill="#ff2e4e" filter="url(#radar-glow)"/>;
+      })}
+    </svg>
+  );
+}
+
+// Heatmap grid (by day × session)
+function HeatGrid({ cells, rows, cols, colorFor }){
+  return (
+    <div style={{display:'grid', gridTemplateColumns:`80px repeat(${cols.length}, 1fr)`, gap:'2px', fontFamily:'var(--mono)', fontSize:10}}>
+      <div></div>
+      {cols.map(c => <div key={c} style={{color:'var(--fg-3)', textAlign:'center', padding:'4px 2px', letterSpacing:'1px'}}>{c}</div>)}
+      {rows.map(r => (
+        <React.Fragment key={r}>
+          <div style={{color:'var(--fg-2)', padding:'4px 8px', display:'flex', alignItems:'center'}}>{r}</div>
+          {cols.map(c => {
+            const cell = cells[r+'|'+c];
+            const col = colorFor(cell);
+            return (
+              <div key={r+c} title={cell ? `${cell.count}笔 ${cell.pnl>0?'+':''}${cell.pnl.toFixed(2)}R` : '无'}
+                style={{
+                  aspectRatio:'1.5',
+                  background:col,
+                  border:'1px solid var(--line)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  color:'var(--fg)', fontVariantNumeric:'tabular-nums',
+                  transition:'all .2s'
+                }}>
+                {cell ? (cell.pnl>0?'+':'')+cell.pnl.toFixed(1) : '·'}
+              </div>
+            );
+          })}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+Object.assign(window, { Ring, EquityCurve, BarList, Sparkline, Calendar, Radar, HeatGrid });
+
+</script>
+<script type="text/babel" data-src="shell.jsx">
+// Layout shell: Sidebar + Topbar + MobileDrawer + Ticker
+
+function Sidebar({ page, setPage, stats, open, setOpen }){
+  const { t, lang } = useI18n();
+
+  const items = [
+    { group: lang==='zh'?'总览':'OVERVIEW', rows:[
+      { id:'dashboard', label: lang==='zh'?'仪表盘':'DASHBOARD', tag:'[D]' },
+    ]},
+    { group: lang==='zh'?'交易':'TRADING', rows:[
+      { id:'record',   label: lang==='zh'?'新建订单':'NEW ORDER',  tag:'[N]' },
+      { id:'import',   label: lang==='zh'?'AI 导入':'AI IMPORT',  tag:'[I]' },
+      { id:'history',  label: lang==='zh'?'历史记录':'HISTORY',    tag:'['+stats.total+']' },
+      { id:'analysis', label: lang==='zh'?'深度分析':'ANALYTICS',  tag:'[A]' },
+    ]},
+    { group: lang==='zh'?'系统':'SYSTEM', rows:[
+      { id:'export',   label: lang==='zh'?'导出':'EXPORT',   tag:'[E]' },
+      { id:'playbook', label: lang==='zh'?'策略手册':'PLAYBOOK', tag:'[P]' },
+    ]},
+  ];
+
+  const click = (id) => { setPage(id); setOpen(false); };
+
+  return (
+    <>
+      <div className={'drawer-scrim'+(open?' show':'')} onClick={() => setOpen(false)}/>
+      <aside className={'sidebar'+(open?' open':'')}>
+        <div className="logo-block">
+          <div className="logo-row">
+            <div className="logo-pulse"/>
+            <div className="logo-name">SAINT</div>
+          </div>
+          <div className="logo-ver">TRADING · v6.1</div>
+        </div>
+
+        <div className="sys-status">
+          <div className="sys-row"><span>{lang==='zh'?'系统':'SYS'}</span><span className="val live">{lang==='zh'?'在线':'ONLINE'}</span></div>
+          <div className="sys-row"><span>{lang==='zh'?'行情':'FEED'}</span><span className="val">MT5:{lang==='zh'?'正常':'OK'}</span></div>
+          <div className="sys-row"><span>AI</span><span className="val">CLAUDE:{lang==='zh'?'正常':'OK'}</span></div>
+        </div>
+
+        <nav className="nav">
+          {items.map(grp => (
+            <React.Fragment key={grp.group}>
+              <div className="nav-label">// {grp.group}</div>
+              {grp.rows.map(r => (
+                <div key={r.id}
+                  className={'nav-item'+(page===r.id?' active':'')}
+                  onClick={() => click(r.id)}>
+                  <span>{r.label}</span>
+                  <span className="tag">{r.tag}</span>
+                </div>
+              ))}
+            </React.Fragment>
+          ))}
+        </nav>
+
+        <div className="sidebar-foot">
+          <span>UID <span className="uid">ST_0042</span></span>
+          <span>●</span>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+function Topbar({ title, stats, onMenu, theme, setTheme, lang, setLang }){
+  const t = useClock();
+  const L = (k) => (DICT[lang||'en']||DICT.en)[k] || k;
+  return (
+    <div className="topbar">
+      <button className="hamburger" onClick={onMenu}>≡</button>
+      <div className="topbar-title">{title}</div>
+      <div className="topbar-sep"/>
+      <div className="topbar-item">
+        <span className="lbl">{L('TOTAL')}</span>
+        <span className={"v "+(stats.totalR>=0?'pos':'neg')}>{stats.totalR>=0?'+':''}{stats.totalR.toFixed(2)}R</span>
+      </div>
+      <div className="topbar-sep"/>
+      <div className="topbar-item">
+        <span className="lbl">{L('WR')}</span>
+        <span className="v">{stats.wr.toFixed(1)}%</span>
+      </div>
+      <div className="topbar-sep"/>
+      <div className="topbar-item">
+        <span className="lbl">{L('TRADES')}</span>
+        <span className="v">{stats.closed}</span>
+      </div>
+      <div className="topbar-right">
+        <button className="tb-btn" title="Toggle Theme" onClick={() => setTheme && setTheme(theme==='dark'?'light':'dark')}>
+          {theme==='dark' ? (lang==='zh'?'☾ 暗色':'☾ DARK') : (lang==='zh'?'☀ 亮色':'☀ LIGHT')}
+        </button>
+        <button className="tb-btn" title="Toggle Lang" onClick={() => setLang && setLang(lang==='en'?'zh':'en')}>
+          {lang==='en' ? 'EN ⇄ 中' : '中 ⇄ EN'}
+        </button>
+        <span className="clock">{clock(t)}</span>
+      </div>
+    </div>
+  );
+}
+
+// Mock live ticker — values update periodically
+function Ticker(){
+  const SYMS = [
+    { s:'XAUUSD',  p:4784.20, pt:0.8  },
+    { s:'BTCUSDT', p:74786.0, pt:24.0 },
+    { s:'ETHUSDT', p:2337.70, pt:2.4  },
+    { s:'GBPUSD',  p:1.33412, pt:0.00008 },
+    { s:'EURUSD',  p:1.13785, pt:0.00007 },
+    { s:'USDJPY',  p:142.85,  pt:0.025 },
+    { s:'NAS100',  p:24468.5, pt:4.5 },
+    { s:'SPX500',  p:7126.06, pt:1.6 },
+    { s:'DXY',     p:97.24,   pt:0.015 },
+    { s:'USOIL',   p:82.59,   pt:0.08 },
+  ];
+  const [vals, setVals] = React.useState(SYMS.map(s => ({ p:s.p, chg:(Math.random()-0.5)*2 })));
+  React.useEffect(() => {
+    const i = setInterval(() => {
+      setVals(v => v.map((x,ix) => {
+        const drift = (Math.random()-0.5) * SYMS[ix].pt * 2;
+        const newP = x.p + drift;
+        return { p:newP, chg:x.chg + (Math.random()-0.5)*0.1 };
+      }));
+    }, 1400);
+    return () => clearInterval(i);
+  }, []);
+
+  // double-list for seamless scroll
+  const render = (keyPfx) => SYMS.map((s,i) => {
+    const v = vals[i];
+    const up = v.chg >= 0;
+    const dp = s.s==='XAUUSD'?2 : s.s.includes('USDT')||s.s==='NAS100'||s.s==='SPX500'?1 : s.p<10?5:2;
+    return (
+      <span className="tick-item" key={keyPfx+i}>
+        <span className="sym">{s.s}</span>
+        <span className="p">{v.p.toFixed(dp)}</span>
+        <span className={'chg '+(up?'pos':'neg')}>{up?'▲':'▼'} {Math.abs(v.chg).toFixed(2)}%</span>
+      </span>
+    );
+  });
+
+  return (
+    <div className="ticker">
+      <div className="ticker-inner">
+        {render('a')}
+        {render('b')}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { Sidebar, Topbar, Ticker });
+
+</script>
+<script type="text/babel" data-src="dashboard.jsx">
+// Dashboard page
+
+function KPI({ label, value, sub, accent, color, suffix, prefix, spark, decimals=2 }){
+  const displayVal = typeof value === 'number' ? value : 0;
+  const anim = useCountUp(displayVal, 900);
+  const showVal = typeof value === 'number'
+    ? (prefix||'') + anim.toFixed(decimals) + (suffix||'')
+    : value;
+
+  return (
+    <div className="kpi" style={{'--accent': accent}}>
+      <div className="kpi-label">
+        <div className="dot"/>
+        <span>{label}</span>
+      </div>
+      <div className={'kpi-value '+(color||'')}>{showVal}</div>
+      {sub && <div className="kpi-sub">{sub}</div>}
+      {spark && <div className="kpi-spark"><Sparkline data={spark} color={accent} width={48} height={18}/></div>}
+    </div>
+  );
+}
+
+function DayTradesModal({ day, trades, onClose }){
+  if (!day) return null;
+  const pnl = trades.reduce((s,t) => s+(t.pnl||0), 0);
+  const wins = trades.filter(t => t.result==='WIN').length;
+  const losses = trades.filter(t => t.result==='LOSS').length;
+
+  return (
+    <div className="modal-bg show" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-hd">
+          <span>[ DAY_DETAIL ] {day}</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="kpi-row" style={{marginBottom:14}}>
+            <div className="kpi" style={{'--accent':'#ff2e4e'}}>
+              <div className="kpi-label"><div className="dot"/><span>NET PNL</span></div>
+              <div className={'kpi-value '+(pnl>=0?'pos':'neg')}>{pnl>=0?'+':''}{pnl.toFixed(2)}R</div>
+            </div>
+            <div className="kpi" style={{'--accent':'#00ff9d'}}>
+              <div className="kpi-label"><div className="dot"/><span>TRADES</span></div>
+              <div className="kpi-value">{trades.length}</div>
+            </div>
+            <div className="kpi" style={{'--accent':'#00ff9d'}}>
+              <div className="kpi-label"><div className="dot"/><span>W / L</span></div>
+              <div className="kpi-value">{wins}/{losses}</div>
+            </div>
+            <div className="kpi" style={{'--accent':'#ffb454'}}>
+              <div className="kpi-label"><div className="dot"/><span>WIN RATE</span></div>
+              <div className="kpi-value">{trades.length? (wins/(wins+losses || 1)*100).toFixed(0):'0'}%</div>
+            </div>
+          </div>
+          <div className="tbl-scroll">
+            <table className="tbl">
+              <thead><tr><th>TIME</th><th>SYMBOL</th><th>DIR</th><th>RESULT</th><th>R</th><th>ZONE</th><th>PATTERN</th><th>NOTES</th></tr></thead>
+              <tbody>
+                {trades.map(t => (
+                  <tr key={t.id}>
+                    <td>{t.datetime.slice(11,16)}</td>
+                    <td>{t.symbol}</td>
+                    <td><span className={'tag tag-'+(t.direction==='LONG'?'long':'short')}>{t.direction}</span></td>
+                    <td><span className={'tag tag-'+(t.result==='WIN'?'win':t.result==='LOSS'?'loss':'be')}>{t.result||'OPEN'}</span></td>
+                    <td className={t.pnl>0?'pos':t.pnl<0?'neg':'zero'}>{t.pnl?(t.pnl>0?'+':'')+t.pnl.toFixed(2):'—'}</td>
+                    <td>{t.zone||'—'}</td>
+                    <td className="ellipsis">{t.pattern||'—'}</td>
+                    <td className="ellipsis" style={{color:'var(--fg-2)'}}>{t.notes||'—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({ trades }){
+  const { t } = useI18n();
+  const [monthOffset, setMonthOffset] = React.useState(0);
+  const [dayModal, setDayModal] = React.useState(null);
+
+  const stats = React.useMemo(() => computeStats(trades), [trades]);
+  const equity = React.useMemo(() => equityCurve(trades), [trades]);
+  const recent = trades.slice(0, 8);
+
+  const bySession = groupBy(trades, 'session');
+  const sessionItems = Object.entries(bySession).map(([k,v]) => {
+    const pnl = v.reduce((s,tr)=>s+(tr.pnl||0),0);
+    return { label:k, value:pnl, color: pnl >= 0 ? 'var(--bull)' : 'var(--bear)', fmt: v => (v>0?'+':'')+v.toFixed(1)+'R' };
+  }).sort((a,b) => b.value - a.value);
+
+  const bySymbol = groupBy(trades, 'symbol');
+  const symItems = Object.entries(bySymbol).map(([k,v]) => {
+    const pnl = v.reduce((s,tr)=>s+(tr.pnl||0),0);
+    return { label:k, value:pnl };
+  }).sort((a,b) => b.value - a.value).slice(0,5);
+
+  const todayStr = new Date().toISOString().slice(0,10);
+  const today = trades.filter(tr => tr.datetime.slice(0,10) === todayStr);
+  const todayPnl = today.reduce((s,tr)=>s+(tr.pnl||0),0);
+
+  const weekAgo = new Date(Date.now() - 7*24*3600*1000).toISOString().slice(0,10);
+  const thisWeek = trades.filter(tr => tr.datetime.slice(0,10) >= weekAgo);
+  const weekPnl = thisWeek.reduce((s,tr)=>s+(tr.pnl||0),0);
+  const weekWR = winRateOf(thisWeek);
+
+  const equityLast = equity.slice(-15).map(e => e.y);
+
+  const monthLabel = new Date(new Date().getFullYear(), new Date().getMonth()+monthOffset, 1)
+    .toLocaleDateString('en-US',{year:'numeric', month:'short'}).toUpperCase();
+
+  return (
+    <div>
+      <Ticker/>
+
+      <div className="kpi-row">
+        <KPI label={t('TOTAL_PNL')} value={stats.totalR} suffix="R" prefix={stats.totalR>=0?'+':''}
+          color={stats.totalR>=0?'pos':'neg'} accent="#ff2e4e"
+          sub={<><span className="delta pos">▲ {stats.wins}W</span>&nbsp;<span className="delta neg">▼ {stats.losses}L</span></>}
+          spark={equityLast}/>
+        <KPI label={t('WIN_RATE')} value={stats.wr} suffix="%" decimals={1}
+          color="pos" accent="#ff2e4e"
+          sub={<span>{stats.wins}/{stats.closed} {t('CLOSED')}</span>}/>
+        <KPI label={t('AVG_WIN')} value={stats.avgWin} suffix="R" prefix="+" decimals={2}
+          color="pos" accent="#ff2e4e"
+          sub={<span>{t('MAX_STREAK')} {stats.maxWin}</span>}/>
+        <KPI label={t('AVG_LOSS')} value={-stats.avgLoss} suffix="R" decimals={2}
+          color="neg" accent="#00ff9d"
+          sub={<span>{t('MAX_STREAK')} {stats.maxLoss}</span>}/>
+        <KPI label={t('RR_RATIO')} value={stats.rr} decimals={2}
+          color="warn" accent="#ffb454"
+          sub={<span>EXP {stats.expectancy.toFixed(2)}R/{t('PER_TRADE')}</span>}/>
+        <KPI label={t('PROFIT_FACTOR')} value={isFinite(stats.profitFactor)?stats.profitFactor:99} decimals={2}
+          color={stats.profitFactor>=1.5?'pos':stats.profitFactor>=1?'warn':'neg'} accent="#ff2e4e"
+          sub={<span>{stats.profitFactor>=1.5?'优秀':stats.profitFactor>=1?'达标':'待改善'}</span>}/>
+        <KPI label={t('TOTAL_TRADES')} value={stats.total} decimals={0}
+          color="cyan" accent="#00d4ff"
+          sub={<span>{stats.closed} {t('CLOSED')} · {stats.total-stats.closed} {t('OPEN')}</span>}/>
+      </div>
+
+      <div className="grid-23">
+        <div className="panel">
+          <div className="panel-hd">
+            <div className="title">{t('EQUITY_CURVE')}</div>
+            <div className="sub">{t('CUM_R')} · {equity.length} {t('POINTS')}</div>
+          </div>
+          <div className="panel-body"><EquityCurve data={equity} height={240}/></div>
+        </div>
+        <div className="panel">
+          <div className="panel-hd">
+            <div className="title">{t('WIN_RATE')}</div>
+            <div className="sub">{t('OVERALL')}</div>
+          </div>
+          <div className="panel-body">
+            <Ring winRate={stats.wr} wins={stats.wins} losses={stats.losses} bes={stats.bes}/>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid-23">
+        <div className="panel">
+          <div className="panel-hd">
+            <div className="title">{t('CALENDAR')} :: {monthLabel}</div>
+            <div style={{display:'flex', gap:6, alignItems:'center'}}>
+              <button className="btn btn-sm" onClick={() => setMonthOffset(m => m-1)}>{t('PREV')}</button>
+              <button className="btn btn-sm" onClick={() => setMonthOffset(0)}>{t('NOW')}</button>
+              <button className="btn btn-sm" onClick={() => setMonthOffset(m => m+1)}>{t('NEXT')}</button>
+            </div>
+          </div>
+          <div className="panel-body">
+            <Calendar trades={trades} monthOffset={monthOffset}
+              onDayClick={(key, t) => setDayModal({ day:key, trades:t })}/>
+          </div>
+        </div>
+
+        <div className="stack">
+          <div className="panel">
+            <div className="panel-hd">
+              <div className="title">{t('TODAY')}</div>
+              <div className="sub">{todayStr}</div>
+            </div>
+            <div className="panel-body" style={{padding:'12px 14px'}}>
+              {today.length ? (
+                <>
+                  <div style={{fontFamily:'var(--mono)', fontSize:24, fontWeight:500,
+                    color: todayPnl>=0?'var(--bull)':'var(--bear)',
+                    textShadow: `0 0 14px ${todayPnl>=0?'var(--bull-shadow)':'var(--bear-shadow)'}`,
+                    marginBottom:6, fontVariantNumeric:'tabular-nums'}}>
+                    {todayPnl>=0?'+':''}{todayPnl.toFixed(2)}R
+                  </div>
+                  <div style={{fontFamily:'var(--mono)', fontSize:11, color:'var(--fg-3)', letterSpacing:1, marginBottom:8}}>
+                    {today.length} {t('TRADES')} · {today.filter(tr=>tr.result==='WIN').length}W/{today.filter(tr=>tr.result==='LOSS').length}L
+                  </div>
+                  {today.slice(0,3).map(tr => (
+                    <div key={tr.id} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderTop:'1px solid var(--line)',fontFamily:'var(--mono)',fontSize:11}}>
+                      <span style={{color:'var(--fg-2)'}}>{tr.datetime.slice(11,16)} {tr.symbol}</span>
+                      <span className={tr.pnl>0?'pos':tr.pnl<0?'neg':'zero'}>{tr.pnl?(tr.pnl>0?'+':'')+tr.pnl.toFixed(2)+'R':'—'}</span>
+                    </div>
+                  ))}
+                </>
+              ) : <div className="empty-st">{t('NO_TRADES_TODAY')}</div>}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-hd">
+              <div className="title">{t('THIS_WEEK')}</div>
+              <div className="sub">7D</div>
+            </div>
+            <div className="panel-body" style={{padding:'12px 14px'}}>
+              <div style={{display:'flex', alignItems:'baseline', gap:10, marginBottom:8}}>
+                <div style={{fontFamily:'var(--mono)', fontSize:24, fontWeight:500,
+                  color: weekPnl>=0?'var(--bull)':'var(--bear)',
+                  textShadow: `0 0 14px ${weekPnl>=0?'var(--bull-shadow)':'var(--bear-shadow)'}`,
+                  fontVariantNumeric:'tabular-nums'}}>
+                  {weekPnl>=0?'+':''}{weekPnl.toFixed(2)}R
+                </div>
+                <div style={{fontFamily:'var(--mono)', fontSize:11, color:'var(--fg-2)'}}>
+                  WR {weekWR.toFixed(0)}%
+                </div>
+              </div>
+              <div style={{fontFamily:'var(--mono)', fontSize:10, color:'var(--fg-3)', letterSpacing:1}}>
+                {thisWeek.length} {t('TRADES')} · AVG {(weekPnl/7).toFixed(2)}R/DAY
+              </div>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:3, marginTop:10, height:50, alignItems:'end'}}>
+                {Array.from({length:7}).map((_,i) => {
+                  const d = new Date(Date.now() - (6-i)*24*3600*1000).toISOString().slice(0,10);
+                  const p = trades.filter(tr=>tr.datetime.slice(0,10)===d).reduce((s,tr)=>s+(tr.pnl||0),0);
+                  const h = Math.min(100, Math.max(p?8:0, Math.abs(p)*18));
+                  return (
+                    <div key={i} style={{display:'flex',flexDirection:'column',justifyContent:'flex-end',alignItems:'center',gap:3,height:'100%'}}>
+                      <div style={{
+                        width:'100%',
+                        height:h+'%',
+                        background: p>=0?'var(--bull)':'var(--bear)',
+                        boxShadow: p?`0 0 6px ${p>=0?'var(--bull-shadow)':'var(--bear-shadow)'}`:'none',
+                        transition:'height .8s ease '+(i*80)+'ms'
+                      }}/>
+                      <div style={{fontFamily:'var(--mono)', fontSize:9, color:'var(--fg-3)'}}>{'SMTWTFS'[new Date(d).getDay()]}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid-2">
+        <div className="panel">
+          <div className="panel-hd">
+            <div className="title">{t('SESSION_PERFORMANCE')}</div>
+            <div className="sub">{t('CUM_R_BY_SESSION')}</div>
+          </div>
+          <div className="panel-body">
+            {sessionItems.length ? <BarList items={sessionItems}/> : <div className="empty-st">{t('NO_DATA')}</div>}
+          </div>
+        </div>
+        <div className="panel">
+          <div className="panel-hd">
+            <div className="title">{t('TOP_SYMBOLS')}</div>
+            <div className="sub">{t('BY_CUM_R')}</div>
+          </div>
+          <div className="panel-body">
+            {symItems.length ? (
+              <BarList items={symItems.map(s => ({
+                label:s.label, value:s.value,
+                color: s.value >= 0 ? 'var(--bull)' : 'var(--bear)',
+                fmt: v => (v>0?'+':'')+v.toFixed(1)+'R'
+              }))}/>
+            ) : <div className="empty-st">{t('NO_DATA')}</div>}
+          </div>
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="panel-hd">
+          <div className="title">{t('RECENT_ORDERS')}</div>
+          <div className="sub">{t('LAST_8')}</div>
+        </div>
+        <div className="tbl-scroll">
+          <table className="tbl">
+            <thead><tr>
+              <th>#</th><th>{t('TIME')}</th><th>{t('SYMBOL')}</th><th>{t('DIR')}</th>
+              <th>{t('ENTRY')}</th><th>{t('SL')}</th><th>{t('EXIT')}</th>
+              <th>R</th><th>{t('RESULT')}</th><th>{t('ZONE')}</th><th>{t('MOM')}</th><th>{t('GRADE')}</th>
+            </tr></thead>
+            <tbody>
+              {recent.map((t,i) => (
+                <tr key={t.id}>
+                  <td style={{color:'var(--fg-3)'}}>{String(i+1).padStart(3,'0')}</td>
+                  <td>{t.datetime.slice(5,16).replace('T',' ')}</td>
+                  <td style={{color:'#fff', fontWeight:600, letterSpacing:1}}>{t.symbol}</td>
+                  <td><span className={'tag tag-'+(t.direction==='LONG'?'long':'short')}>{t.direction}</span></td>
+                  <td>{t.entry}</td>
+                  <td>{t.sl}</td>
+                  <td>{t.exit||'—'}</td>
+                  <td className={t.pnl>0?'pos':t.pnl<0?'neg':'zero'}>{t.pnl?(t.pnl>0?'+':'')+t.pnl.toFixed(2):'—'}</td>
+                  <td><span className={'tag tag-'+(t.result==='WIN'?'win':t.result==='LOSS'?'loss':t.result==='BE'?'be':'c')}>{t.result||'OPEN'}</span></td>
+                  <td>{t.zone||'—'}</td>
+                  <td>{t.gradeMom ? <span className={'mom '+t.gradeMom}>{t.gradeMom}</span> : '—'}</td>
+                  <td>{t.grade ? <span className={'tag tag-'+t.grade.toLowerCase()}>{t.grade}</span> : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {dayModal && <DayTradesModal day={dayModal.day} trades={dayModal.trades} onClose={() => setDayModal(null)}/>}
+    </div>
+  );
+}
+
+Object.assign(window, { Dashboard, KPI, DayTradesModal });
+
+</script>
+<script type="text/babel" data-src="pages.jsx">
+// History, Analytics, Playbook, Record, Import pages
+
+// ============ HISTORY ============
+function History({ trades, onDelete, onEdit }){
+  const [fil, setFil] = React.useState({ sym:'', result:'', grade:'', dir:'', zone:'' });
+  const [sort, setSort] = React.useState({ key:'datetime', dir:'desc' });
+  const [detail, setDetail] = React.useState(null);
+
+  const filtered = trades.filter(t =>
+    (!fil.sym || t.symbol === fil.sym) &&
+    (!fil.result || t.result === fil.result) &&
+    (!fil.grade || t.grade === fil.grade) &&
+    (!fil.dir || t.direction === fil.dir) &&
+    (!fil.zone || t.zone === fil.zone)
+  ).sort((a,b) => {
+    const m = sort.dir === 'asc' ? 1 : -1;
+    if (sort.key === 'pnl') return ((a.pnl||0) - (b.pnl||0)) * m;
+    return (a[sort.key] > b[sort.key] ? 1 : -1) * m;
+  });
+
+  const stats = computeStats(filtered);
+
+  return (
+    <div>
+      <div className="kpi-row" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
+        <KPI label="FILTERED" value={filtered.length} decimals={0} color="cyan" accent="#00d4ff" sub={<span>OF {trades.length} TOTAL</span>}/>
+        <KPI label="WIN RATE" value={stats.wr} suffix="%" decimals={1} color="pos" accent="#ff2e4e" sub={<span>{stats.wins}W / {stats.losses}L</span>}/>
+        <KPI label="NET R" value={stats.totalR} suffix="R" prefix={stats.totalR>=0?'+':''} color={stats.totalR>=0?'pos':'neg'} accent="#ff2e4e"/>
+        <KPI label="EXPECTANCY" value={stats.expectancy} suffix="R" prefix={stats.expectancy>=0?'+':''} color="warn" accent="#ffb454" sub={<span>PER TRADE</span>}/>
+      </div>
+
+      <div className="filter-bar">
+        <span className="lbl">FILTER</span>
+        <select className="form-select" value={fil.sym} onChange={e => setFil({...fil, sym:e.target.value})}>
+          <option value="">ALL SYMBOLS</option>
+          {[...new Set(trades.map(t=>t.symbol))].map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select className="form-select" value={fil.result} onChange={e => setFil({...fil, result:e.target.value})}>
+          <option value="">ALL RESULTS</option><option value="WIN">WIN</option><option value="LOSS">LOSS</option><option value="BE">BE</option><option value="MISSED">MISSED</option>
+        </select>
+        <select className="form-select" value={fil.grade} onChange={e => setFil({...fil, grade:e.target.value})}>
+          <option value="">ALL GRADES</option><option value="A">A</option><option value="B">B</option><option value="C">C</option>
+        </select>
+        <select className="form-select" value={fil.dir} onChange={e => setFil({...fil, dir:e.target.value})}>
+          <option value="">ALL DIR</option><option value="LONG">LONG</option><option value="SHORT">SHORT</option>
+        </select>
+        <select className="form-select" value={fil.zone} onChange={e => setFil({...fil, zone:e.target.value})}>
+          <option value="">ALL ZONES</option><option>OB</option><option>FVG</option><option>OB+FVG</option><option>IFVG</option><option>BB</option>
+        </select>
+        <button className="btn btn-sm" onClick={() => setFil({sym:'',result:'',grade:'',dir:'',zone:''})}>RESET</button>
+        <span style={{marginLeft:'auto',fontFamily:'var(--mono)',fontSize:10,color:'var(--fg-3)'}}>{filtered.length} ROWS</span>
+      </div>
+
+      <div className="panel">
+        <div className="tbl-scroll">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th style={{cursor:'pointer'}} onClick={() => setSort(s => ({key:'datetime', dir:s.key==='datetime'&&s.dir==='desc'?'asc':'desc'}))}>
+                  TIME {sort.key==='datetime' ? (sort.dir==='desc'?'↓':'↑') : ''}
+                </th>
+                <th>SYMBOL</th><th>DIR</th><th>SESSION</th>
+                <th>ENTRY</th><th>SL</th><th>EXIT</th>
+                <th style={{cursor:'pointer'}} onClick={() => setSort(s => ({key:'pnl', dir:s.key==='pnl'&&s.dir==='desc'?'asc':'desc'}))}>
+                  R {sort.key==='pnl' ? (sort.dir==='desc'?'↓':'↑') : ''}
+                </th>
+                <th>RESULT</th><th>ZONE</th><th>PATTERN</th><th>MOM</th><th>GRADE</th><th>ACT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length ? filtered.map((t,i) => (
+                <tr key={t.id} onClick={() => setDetail(t)}>
+                  <td style={{color:'var(--fg-3)'}}>{String(i+1).padStart(3,'0')}</td>
+                  <td>{t.datetime.slice(0,16).replace('T',' ')}</td>
+                  <td style={{color:'#fff',fontWeight:600,letterSpacing:1}}>{t.symbol}</td>
+                  <td><span className={'tag tag-'+(t.direction==='LONG'?'long':'short')}>{t.direction}</span></td>
+                  <td style={{color:'var(--fg-2)'}}>{t.session||'—'}</td>
+                  <td>{t.entry}</td>
+                  <td>{t.sl}</td>
+                  <td>{t.exit||'—'}</td>
+                  <td className={t.pnl>0?'pos':t.pnl<0?'neg':'zero'}>{t.pnl?(t.pnl>0?'+':'')+t.pnl.toFixed(2):'—'}</td>
+                  <td><span className={'tag tag-'+(t.result==='WIN'?'win':t.result==='LOSS'?'loss':t.result==='BE'?'be':'c')}>{t.result||'OPEN'}</span></td>
+                  <td>{t.zone||'—'}</td>
+                  <td className="ellipsis" style={{maxWidth:120}}>{t.pattern||'—'}</td>
+                  <td>{t.gradeMom ? <span className={'mom '+t.gradeMom}>{t.gradeMom}</span> : '—'}</td>
+                  <td>{t.grade ? <span className={'tag tag-'+t.grade.toLowerCase()}>{t.grade}</span> : '—'}</td>
+                  <td onClick={e=>e.stopPropagation()}>
+                    <button className="btn btn-sm" onClick={() => onEdit(t)} style={{padding:'3px 8px',fontSize:9}}>EDIT</button>{' '}
+                    <button className="btn btn-sm" onClick={() => { if(confirm('DELETE?')) onDelete(t.id); }} style={{padding:'3px 8px',fontSize:9,color:'var(--bear)',borderColor:'var(--bear-dim-2)'}}>DEL</button>
+                  </td>
+                </tr>
+              )) : (
+                <tr><td colSpan="15" className="empty-st">[ NO MATCHING RECORDS ]</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {detail && <TradeDetail trade={detail} onClose={() => setDetail(null)}/>}
+    </div>
+  );
+}
+
+function Lightbox({ images, startIndex, onClose }){
+  const [idx, setIdx] = React.useState(startIndex);
+  React.useEffect(() => {
+    const handler = e => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowRight') setIdx(i => Math.min(i+1, images.length-1));
+      if (e.key === 'ArrowLeft')  setIdx(i => Math.max(i-1, 0));
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [images.length, onClose]);
+
+  return (
+    <div className="lightbox-bg show" onClick={onClose}>
+      <button className="lightbox-close" onClick={onClose}>×</button>
+      {idx > 0 && (
+        <button className="lightbox-nav prev" onClick={e => { e.stopPropagation(); setIdx(i=>i-1); }}>‹</button>
+      )}
+      <div className="lightbox-img-wrap" onClick={e => e.stopPropagation()}>
+        <img src={images[idx]} alt={`chart-${idx+1}`}/>
+      </div>
+      {idx < images.length-1 && (
+        <button className="lightbox-nav next" onClick={e => { e.stopPropagation(); setIdx(i=>i+1); }}>›</button>
+      )}
+      <div className="lightbox-counter">{idx+1} / {images.length}</div>
+    </div>
+  );
+}
+
+function TradeDetail({ trade, onClose }){
+  const t = trade;
+  const [lbIdx, setLbIdx] = React.useState(null);
+  const imgs = t.images || [];
+
+  return (
+    <div className="modal-bg show" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-hd">
+          <span>[ ORDER ] {t.symbol} · {t.datetime.slice(0,16).replace('T',' ')}</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="kpi-row" style={{gridTemplateColumns:'repeat(4,1fr)', marginBottom:14}}>
+            <div className="kpi"><div className="kpi-label"><div className="dot"/><span>PNL</span></div><div className={'kpi-value '+(t.pnl>0?'pos':t.pnl<0?'neg':'')}>{t.pnl?(t.pnl>0?'+':'')+t.pnl.toFixed(2)+'R':'—'}</div></div>
+            <div className="kpi"><div className="kpi-label"><div className="dot"/><span>SCORE</span></div><div className="kpi-value warn">{t.score||'—'}</div></div>
+            <div className="kpi"><div className="kpi-label"><div className="dot"/><span>GRADE</span></div><div className="kpi-value">{t.grade||'—'}</div></div>
+            <div className="kpi"><div className="kpi-label"><div className="dot"/><span>MOMENTUM</span></div><div className="kpi-value">{t.gradeMom||'—'}</div></div>
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:14}}>
+            {[['DIR',t.direction],['SESSION',t.session],['ENTRY',t.entry],['SL',t.sl],['EXIT',t.exit],['MARKET',t.market],['STRUCT',t.struct],['ZONE',t.zone],['PATTERN',t.pattern],['SIGNAL_BAR',t.signalBar],['SWEEP',t.sweepType],['BE_LVL',t.beLevel],['CHOCH',t.chochPath],['TF',t.tf],['RESULT',t.result||'OPEN']].map(([k,v],i)=>(
+              <div key={i} style={{background:'var(--bg-2)',border:'1px solid var(--line)',padding:'8px 10px',fontFamily:'var(--mono)',fontSize:11}}>
+                <div style={{color:'var(--fg-3)',fontSize:9,letterSpacing:1.5,marginBottom:2}}>{k}</div>
+                <div style={{color:'var(--fg)'}}>{v||'—'}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── 图表截图区 ── */}
+          {imgs.length > 0 && (
+            <div style={{marginBottom:14}}>
+              <div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--fg-3)',letterSpacing:1.5,marginBottom:8}}>
+                [ CHARTS · {imgs.length} ]
+              </div>
+              <div className="img-gallery">
+                {imgs.map((src, i) => (
+                  <div
+                    key={i}
+                    className="img-gallery-thumb"
+                    onClick={() => setLbIdx(i)}
+                    title="点击放大"
+                  >
+                    <img src={src} alt={`chart-${i+1}`}/>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {t.notes && <div className="hint" style={{marginBottom:14}}>{t.notes}</div>}
+          {t.aiAnalysis && (
+            <div style={{marginTop:10}}>
+              <div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--fg-3)',letterSpacing:1.5,marginBottom:6}}>[ AI_ANALYSIS ]</div>
+              <div className="code-block">{t.aiAnalysis}</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 灯箱 */}
+      {lbIdx !== null && (
+        <Lightbox
+          images={imgs}
+          startIndex={lbIdx}
+          onClose={() => setLbIdx(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============ ANALYTICS ============
+function Analytics({ trades }){
+  const { t, lang } = useI18n();
+  const stats = computeStats(trades);
+  const equity = equityCurve(trades);
+
+  const bySymbol = groupBy(trades, 'symbol');
+  const symBars = Object.entries(bySymbol).map(([k,v])=>{
+    const pnl = v.reduce((s,t)=>s+(t.pnl||0),0);
+    return { label:k, value:pnl, color: pnl>=0?'var(--bull)':'var(--bear)', fmt:v=>(v>0?'+':'')+v.toFixed(1)+'R' };
+  }).sort((a,b)=>b.value-a.value);
+
+  const byGrade = groupBy(trades.filter(t=>t.grade), 'grade');
+  const gradeBars = ['A','B','C'].map(g => {
+    const list = byGrade[g]||[];
+    const wr = winRateOf(list);
+    return { label: lang==='zh'?`${g}类信号`:`GRADE ${g}`, value:wr, color:g==='A'?'var(--bull)':g==='B'?'var(--cyan)':'var(--fg-2)', fmt:v=>v.toFixed(1)+'%' };
+  });
+
+  const byMom = groupBy(trades.filter(t=>t.gradeMom), 'gradeMom');
+  const momBars = ['S','A','B','C'].map(g => {
+    const list = byMom[g]||[];
+    const wr = winRateOf(list);
+    return { label: lang==='zh'?`动能${g}级`:`MOM ${g}`, value:wr, color:g==='S'?'var(--purple)':g==='A'?'var(--bull)':g==='B'?'var(--cyan)':'var(--fg-2)', fmt:v=>v.toFixed(1)+'%' };
+  });
+
+  const byZone = groupBy(trades.filter(t=>t.zone), 'zone');
+  const zoneBars = Object.entries(byZone).map(([k,v])=>{
+    const wr = winRateOf(v);
+    return { label:k, value:wr, color: wr>=60?'var(--bull)':wr>=50?'var(--cyan)':'var(--bear)', fmt:v=>v.toFixed(0)+'%' };
+  }).sort((a,b)=>b.value-a.value);
+
+  const byPattern = groupBy(trades.filter(t=>t.pattern), 'pattern');
+  const patternBars = Object.entries(byPattern).map(([k,v])=>{
+    const pnl = v.reduce((s,t)=>s+(t.pnl||0),0);
+    return { label:k, value:pnl, color: pnl>=0?'var(--bull)':'var(--bear)', fmt:v=>(v>0?'+':'')+v.toFixed(1)+'R' };
+  }).sort((a,b)=>b.value-a.value).slice(0,8);
+
+  // Heatmap: session × direction
+  const sessions = ['亚盘','欧盘','重叠','美盘'];
+  const dirs = ['LONG','SHORT'];
+  const heatCells = {};
+  trades.forEach(t => {
+    if (!t.session || !t.direction) return;
+    const k = t.session+'|'+t.direction;
+    if (!heatCells[k]) heatCells[k] = { count:0, pnl:0, wins:0 };
+    heatCells[k].count++;
+    heatCells[k].pnl += (t.pnl||0);
+    if (t.result==='WIN') heatCells[k].wins++;
+  });
+  const heatColor = (cell) => {
+    if (!cell) return 'var(--bg-2)';
+    const intensity = Math.min(1, Math.abs(cell.pnl)/10);
+    if (cell.pnl >= 0) return `rgba(255,46,78,${0.08 + intensity*0.5})`;
+    return `rgba(0,255,157,${0.08 + intensity*0.4})`;
+  };
+
+  // Radar: 8-axis distribution
+  const checksKeys = ['sweep','bos','ob','fvg','ob_fvg','window','signal_bar','h2l2'];
+  const radarData = checksKeys.map(k => ({
+    label: k.toUpperCase(),
+    value: trades.length ? trades.filter(t=>t.checks?.[k]).length / trades.length : 0
+  }));
+
+  return (
+    <div>
+      <div className="kpi-row">
+        <KPI label={t('PROFIT_FACTOR')} value={isFinite(stats.profitFactor)?stats.profitFactor:99} decimals={2} color={stats.profitFactor>=1.5?'pos':stats.profitFactor>=1?'warn':'neg'} accent="#ff2e4e"/>
+        <KPI label={t('EXPECTANCY')} value={stats.expectancy} suffix="R" prefix={stats.expectancy>=0?'+':''} decimals={2} color="warn" accent="#ffb454"/>
+        <KPI label={t('AVG_WIN')} value={stats.avgWin} suffix="R" prefix="+" decimals={2} color="pos" accent="#ff2e4e"/>
+        <KPI label={t('AVG_LOSS')} value={-stats.avgLoss} suffix="R" decimals={2} color="neg" accent="#00ff9d"/>
+        <KPI label={t('MAX_WIN_STREAK')} value={stats.maxWin} decimals={0} color="pos" accent="#ff2e4e"/>
+        <KPI label={t('MAX_LOSS_STREAK')} value={stats.maxLoss} decimals={0} color="neg" accent="#00ff9d"/>
+      </div>
+
+      <div className="panel" style={{marginBottom:14}}>
+        <div className="panel-hd">
+          <div className="title">{t('EQUITY_FULL')}</div>
+          <div className="sub">{equity.length} {t('CLOSED_TRADES')}</div>
+        </div>
+        <div className="panel-body"><EquityCurve data={equity} height={260}/></div>
+      </div>
+
+      <div className="grid-2">
+        <div className="panel">
+          <div className="panel-hd"><div className="title">{t('SYMBOL_PERF')}</div><div className="sub">{t('BY_CUM_R')}</div></div>
+          <div className="panel-body">{symBars.length?<BarList items={symBars}/>:<div className="empty-st">{t('NO_DATA')}</div>}</div>
+        </div>
+        <div className="panel">
+          <div className="panel-hd"><div className="title">{t('GRADE_WR')}</div><div className="sub">A/B/C</div></div>
+          <div className="panel-body">{gradeBars.some(b=>b.value>0)?<BarList items={gradeBars} maxVal={100}/>:<div className="empty-st">{t('NO_DATA')}</div>}</div>
+        </div>
+      </div>
+
+      <div className="grid-2">
+        <div className="panel">
+          <div className="panel-hd"><div className="title">{t('MOMENTUM_WR')}</div><div className="sub">S/A/B/C</div></div>
+          <div className="panel-body">{momBars.some(b=>b.value>0)?<BarList items={momBars} maxVal={100}/>:<div className="empty-st">{t('NO_DATA')}</div>}</div>
+        </div>
+        <div className="panel">
+          <div className="panel-hd"><div className="title">{t('ZONE_WR')}</div><div className="sub">OB/FVG/IFVG/BB</div></div>
+          <div className="panel-body">{zoneBars.length?<BarList items={zoneBars} maxVal={100}/>:<div className="empty-st">{t('NO_DATA')}</div>}</div>
+        </div>
+      </div>
+
+      <div className="grid-2">
+        <div className="panel">
+          <div className="panel-hd"><div className="title">{t('PATTERN_PNL')}</div><div className="sub">{t('TOP_8')}</div></div>
+          <div className="panel-body">{patternBars.length?<BarList items={patternBars}/>:<div className="empty-st">{t('NO_DATA')}</div>}</div>
+        </div>
+        <div className="panel">
+          <div className="panel-hd"><div className="title">{t('EXEC_RADAR')}</div><div className="sub">{t('CHECKLIST_COMP')}</div></div>
+          <div className="panel-body" style={{display:'flex',justifyContent:'center'}}>
+            <Radar data={radarData} size={240}/>
+          </div>
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="panel-hd"><div className="title">{t('HEATMAP')}</div><div className="sub">{t('PNL_IN_R')}</div></div>
+        <div className="panel-body">
+          <HeatGrid rows={sessions} cols={dirs} cells={heatCells} colorFor={heatColor}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ PLAYBOOK ============
+function Playbook(){
+  const { t, lang } = useI18n();
+  const scoreRows = lang==='zh' ? [
+    ['结构清晰度', 20, 'BOS/CHoCH明确 = 20 · 仅趋势线 = 10'],
+    ['入场三要素', 20, '含信号棒确认 = 20 · 仅OB/FVG = 15'],
+    ['偏见对齐', 10, '多周期一致 = 10 · 逆势 = 0'],
+    ['反向阻力', 10, '无反向阻力 = 10 · 有阻力 = 5'],
+    ['盈亏比', 10, '≥1:3 = 10 · 1:2 = 7 · <1:2 = 3'],
+    ['入场精度', 20, 'S级+叠加+PDH/PDL扫损 = 20'],
+    ['时间段', 10, '主窗口 15:00-17:00 / 20:30-22:30 = 10'],
+  ] : [
+    ['STRUCTURE CLARITY', 20, 'BOS/CHoCH clear = 20 · trend only = 10'],
+    ['ENTRY 3-ELEMENTS', 20, 'Signal bar confirmed = 20 · OB/FVG only = 15'],
+    ['BIAS ALIGNMENT', 10, 'Multi-TF aligned = 10 · counter = 0'],
+    ['COUNTER RESISTANCE', 10, 'No resistance = 10 · has resistance = 5'],
+    ['RISK-REWARD', 10, '≥1:3 = 10 · 1:2 = 7 · <1:2 = 3'],
+    ['ENTRY PRECISION', 20, 'S-grade+overlap+PDH/PDL sweep = 20'],
+    ['SESSION', 10, 'Prime window 15:00-17:00 / 20:30-22:30 = 10'],
+  ];
+
+  const rules = [
+    { t:'BB (Breaker Block)', d:'OB失败翻转为反向打击区 — 原压力变支撑' },
+    { t:'信号棒 + H2/L2', d:'1M级确认机械化 — 规避情绪化进场' },
+    { t:'三档BE管理', d:'1:1移SL → 1:2减仓 → 时间止盈' },
+    { t:'PDH/PDL流动性', d:'动态PD导航 · 亚盘高低点扫损入场' },
+  ];
+
+  return (
+    <div>
+      <div className="grid-2">
+        <div className="panel">
+          <div className="panel-hd"><div className="title">SCORE SYSTEM</div><div className="sub">100 PTS TOTAL</div></div>
+          <div className="panel-body tight">
+            <table className="tbl">
+              <thead><tr><th>{t('CRITERION')}</th><th>{t('MAX')}</th><th>{t('STANDARD')}</th></tr></thead>
+              <tbody>
+                {scoreRows.map(([n,m,d],i) => (
+                  <tr key={i}>
+                    <td style={{color:'var(--fg)'}}>{n}</td>
+                    <td style={{color:'var(--amber)',fontWeight:600}}>/{m}</td>
+                    <td style={{color:'var(--fg-2)', fontSize:11}}>{d}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="panel-hd"><div className="title">{t('NEW_RULES')}</div><div className="sub">{t('SMT_ENHANCED')}</div></div>
+          <div className="panel-body" style={{display:'flex',flexDirection:'column',gap:8}}>
+            {rules.map((r,i) => (
+              <div key={i} style={{padding:'10px 12px',background:'var(--bg-2)',borderLeft:'2px solid var(--bull)',fontFamily:'var(--mono)',fontSize:11}}>
+                <div style={{color:'var(--bull)',fontWeight:600,marginBottom:3,letterSpacing:1}}>▶ {r.t}</div>
+                <div style={{color:'var(--fg-2)',lineHeight:1.6}}>{r.d}</div>
+              </div>
+            ))}
+            <div style={{marginTop:6,padding:'12px 14px',background:'var(--bear-dim)',borderLeft:'2px solid var(--bear)',fontFamily:'var(--mono)',fontSize:11,color:'var(--fg-1)',lineHeight:1.8}}>
+              <div style={{color:'var(--bear)',fontWeight:600,letterSpacing:1.5,marginBottom:4}}>{t('POSITION_SIZING')}</div>
+              A类 (≥80) → <span style={{color:'var(--bull)'}}>{t('FULL')}</span> ·
+              B类 (70-79) → <span style={{color:'var(--amber)'}}>{t('HALF')}</span> ·
+              C类 (&lt;70) → <span style={{color:'var(--bear)'}}>{t('SKIP')}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="panel-hd"><div className="title">{t('TRADING_WINDOWS')}</div><div className="sub">{t('PRIME_SESSIONS')}</div></div>
+        <div className="panel-body">
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>
+            {[
+              { name:t('ASIA_OPEN'), time:'09:00 - 11:00', q:t('LIQUIDITY_BUILD') },
+              { name:t('EU_OPEN'),   time:'15:00 - 17:00', q:t('PRIME_ENTRY'), p:true },
+              { name:t('OVERLAP'),   time:'20:30 - 22:30', q:t('MAX_VOLATILITY'), p:true },
+              { name:t('US_CLOSE'),  time:'03:00 - 05:00', q:t('FADE_AVOID') },
+            ].map((w,i) => (
+              <div key={i} style={{padding:'14px',border:'1px solid '+(w.p?'var(--bull)':'var(--line)'),background:w.p?'var(--bull-dim)':'var(--bg-2)',fontFamily:'var(--mono)'}}>
+                <div style={{fontSize:10,color:w.p?'var(--bull)':'var(--fg-3)',letterSpacing:1.5,marginBottom:6}}>{w.p?'◆':'○'} {w.name}</div>
+                <div style={{fontSize:14,color:'#fff',fontWeight:500,marginBottom:4}}>{w.time}</div>
+                <div style={{fontSize:10,color:'var(--fg-2)',letterSpacing:.5}}>{w.q}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { History, Analytics, Playbook, TradeDetail });
+
+</script>
+<script type="text/babel" data-src="record-import.jsx">
+// Record + AI Import pages
+
+function Record({ trades, onSave, editingTrade, onCancelEdit }){
+  const { t, lang } = useI18n();
+  const blank = () => ({
+    symbol:'GBPUSD', datetime:new Date().toISOString().slice(0,16),
+    direction:'LONG', session:'欧盘',
+    entry:'', sl:'', tp1:'', tp2:'', exit:'',
+    result:'', pnl:'', score:'',
+    grade:'', gradeMom:'', market:'', struct:'',
+    pattern:'', zone:'', signalBar:'', sweepType:'',
+    beLevel:'', chochPath:'', tf:'15M',
+    checks:{sweep:false,bos:false,ob:false,fvg:false,ob_fvg:false,window:false,signal_bar:false,h2l2:false},
+    aiAnalysis:'', notes:'', images:[]
+  });
+
+  const [form, setForm] = React.useState(editingTrade || blank());
+  React.useEffect(() => { setForm(editingTrade || blank()); }, [editingTrade?.id]);
+
+  const update = (k,v) => setForm(f => ({...f, [k]:v}));
+  const toggleCheck = (k) => setForm(f => ({...f, checks:{...f.checks, [k]:!f.checks[k]}}));
+
+  const fileRef = React.useRef();
+  const handleFiles = (files) => {
+    const imgs = [...form.images];
+    for (const f of files) {
+      if (imgs.length >= 6) break;
+      if (!f.type.startsWith('image/')) continue;
+      const reader = new FileReader();
+      reader.onload = e => setForm(ff => ({...ff, images:[...ff.images, e.target.result]}));
+      reader.readAsDataURL(f);
+    }
+  };
+  React.useEffect(() => {
+    const onPaste = e => {
+      for (const it of e.clipboardData.items) {
+        if (it.type.startsWith('image/')) { handleFiles([it.getAsFile()]); break; }
+      }
+    };
+    document.addEventListener('paste', onPaste);
+    return () => document.removeEventListener('paste', onPaste);
+  }, [form.images.length]);
+
+  const save = () => {
+    if (!form.datetime || !form.entry || !form.sl) { alert('必填:时间/入场价/止损价'); return; }
+    const entry = parseFloat(form.entry), sl = parseFloat(form.sl);
+    const exit = parseFloat(form.exit)||null;
+    let pnl = parseFloat(form.pnl);
+    if ((isNaN(pnl)||pnl===0) && exit && entry && sl) {
+      const risk = Math.abs(entry-sl);
+      const prof = Math.abs(exit-entry);
+      const sign = form.direction==='LONG' ? (exit>entry?1:-1) : (exit<entry?1:-1);
+      pnl = risk ? +(sign*prof/risk).toFixed(2) : 0;
+    }
+    let score = parseInt(form.score);
+    if (isNaN(score)) {
+      const c = form.checks; score = 0;
+      if (c.sweep) score+=20; if (c.ob) score+=15; if (c.ob_fvg) score+=15;
+      if (c.bos) score+=10; if (c.window) score+=10; if (c.signal_bar) score+=15;
+      if (c.h2l2) score+=10; if (c.fvg) score+=5;
+    }
+    const grade = form.grade || (score>=80?'A':score>=70?'B':'C');
+    const rec = {
+      ...form,
+      id: form.id || Date.now(),
+      entry, sl,
+      tp1: parseFloat(form.tp1)||null, tp2:parseFloat(form.tp2)||null,
+      exit, pnl: isNaN(pnl)?null:pnl, score, grade
+    };
+    onSave(rec);
+    if (!editingTrade) setForm(blank());
+  };
+
+  const c = form.checks;
+  const checkItems = [
+    ['sweep','SWEEP 扫损'],['bos','BOS 实体'],['ob','OB 三要素'],['fvg','FVG 处女'],
+    ['ob_fvg','OB+FVG 叠加'],['window','时间窗口'],['signal_bar','信号棒'],['h2l2','H2/L2']
+  ];
+
+  return (
+    <div>
+      {editingTrade && (
+        <div className="hint" style={{borderColor:'var(--cyan)', borderLeftColor:'var(--cyan)', color:'var(--cyan)'}}>
+          {lang==='zh'?'[编辑中]':'[EDITING]'} #{editingTrade.id} · {editingTrade.symbol} {editingTrade.datetime?.slice(0,16).replace('T',' ')}
+          <button className="btn btn-sm" style={{marginLeft:12}} onClick={onCancelEdit}>{t('CANCEL')}</button>
+        </div>
+      )}
+
+      <div className="panel">
+        <div className="panel-hd">
+          <div className="title">{editingTrade?t('UPDATE_ORDER'):t('NEW_ORDER_TITLE')}</div>
+          <div className="sub">{t('AUTO_SCORE')}</div>
+        </div>
+        <div className="panel-body">
+          <div className="form-section">
+            <div className="form-section-title">{t('BASIC')}<div className="line"/></div>
+            <div className="form-grid-4">
+              <div className="form-group">
+                <label className="form-label">{t('SYMBOL')}<span className="req">*</span></label>
+                <select className="form-select" value={form.symbol} onChange={e=>update('symbol',e.target.value)}>
+                  <option>GBPUSD</option><option>XAUUSD</option><option>BTCUSDT</option>
+                </select>
+              </div>
+              <div className="form-group"><label className="form-label">{t('DATETIME')}<span className="req">*</span></label>
+                <input type="datetime-local" className="form-input" value={form.datetime} onChange={e=>update('datetime',e.target.value)}/></div>
+              <div className="form-group"><label className="form-label">{t('DIRECTION')}<span className="req">*</span></label>
+                <select className="form-select" value={form.direction} onChange={e=>update('direction',e.target.value)}>
+                  <option value="LONG">{t('LONG')}</option><option value="SHORT">{t('SHORT')}</option>
+                </select></div>
+              <div className="form-group"><label className="form-label">{t('SESSION')}</label>
+                <select className="form-select" value={form.session} onChange={e=>update('session',e.target.value)}>
+                  <option>欧盘</option><option>重叠</option><option>亚盘</option><option>美盘</option>
+                </select></div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <div className="form-section-title">{t('PRICES')}<div className="line"/></div>
+            <div className="form-grid-4">
+              <div className="form-group"><label className="form-label">{t('ENTRY')}<span className="req">*</span></label>
+                <input type="number" className="form-input" step="0.00001" value={form.entry} onChange={e=>update('entry',e.target.value)}/></div>
+              <div className="form-group"><label className="form-label">{t('STOP_LOSS')}<span className="req">*</span></label>
+                <input type="number" className="form-input" step="0.00001" value={form.sl} onChange={e=>update('sl',e.target.value)}/></div>
+              <div className="form-group"><label className="form-label">{t('TP1')}</label>
+                <input type="number" className="form-input" step="0.00001" value={form.tp1} onChange={e=>update('tp1',e.target.value)}/></div>
+              <div className="form-group"><label className="form-label">{t('TP2')}</label>
+                <input type="number" className="form-input" step="0.00001" value={form.tp2} onChange={e=>update('tp2',e.target.value)}/></div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <div className="form-section-title">{t('RESULT')}<div className="line"/></div>
+            <div className="form-grid-4">
+              <div className="form-group"><label className="form-label">{t('EXIT')}</label>
+                <input type="number" className="form-input" step="0.00001" value={form.exit} onChange={e=>update('exit',e.target.value)}/></div>
+              <div className="form-group"><label className="form-label">{t('RESULT')}</label>
+                <select className="form-select" value={form.result} onChange={e=>update('result',e.target.value)}>
+                  <option value="">{t('OPEN')}</option><option value="WIN">{t('WIN')}</option><option value="LOSS">{t('LOSS')}</option><option value="BE">{t('BE')}</option><option value="MISSED">{t('MISSED')}</option>
+                </select></div>
+              <div className="form-group"><label className="form-label">{t('PNL')} (R)</label>
+                <input type="number" className="form-input" step="0.1" value={form.pnl} onChange={e=>update('pnl',e.target.value)}/></div>
+              <div className="form-group"><label className="form-label">{t('SCORE')}</label>
+                <input type="number" className="form-input" min="0" max="100" value={form.score} onChange={e=>update('score',e.target.value)}/></div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <div className="form-section-title">{t('v6_STRATEGY')}<div className="line"/></div>
+            <div className="form-grid-4">
+              <div className="form-group"><label className="form-label">{t('MARKET')}</label>
+                <select className="form-select" value={form.market} onChange={e=>update('market',e.target.value)}>
+                  <option value="">—</option><option>单边多头</option><option>单边空头</option><option>结构上涨</option><option>结构下跌</option><option>箱体震荡</option>
+                </select></div>
+              <div className="form-group"><label className="form-label">{t('STRUCT')}</label>
+                <select className="form-select" value={form.struct} onChange={e=>update('struct',e.target.value)}>
+                  <option value="">—</option><option>外部结构</option><option>内部结构</option>
+                </select></div>
+              <div className="form-group"><label className="form-label">{t('MOMENTUM')}</label>
+                <select className="form-select" value={form.gradeMom} onChange={e=>update('gradeMom',e.target.value)}>
+                  <option value="">—</option><option>S</option><option>A</option><option>B</option><option>C</option>
+                </select></div>
+              <div className="form-group"><label className="form-label">{t('GRADE')}</label>
+                <select className="form-select" value={form.grade} onChange={e=>update('grade',e.target.value)}>
+                  <option value="">{t('AUTO')}</option><option>A</option><option>B</option><option>C</option>
+                </select></div>
+            </div>
+            <div className="form-grid-4" style={{marginTop:10}}>
+              <div className="form-group"><label className="form-label">{t('PATTERN')}</label>
+                <select className="form-select" value={form.pattern} onChange={e=>update('pattern',e.target.value)}>
+                  <option value="">—</option><option>S级挂单</option><option>A级挂单</option><option>B级挂单</option>
+                  <option>信号棒触发</option><option>长影线拒绝</option><option>双底/双顶</option>
+                  <option>1M FVG位移</option><option>BB反向</option><option>IFVG反向</option>
+                </select></div>
+              <div className="form-group"><label className="form-label">{t('ZONE')}</label>
+                <select className="form-select" value={form.zone} onChange={e=>update('zone',e.target.value)}>
+                  <option value="">—</option><option>OB</option><option>FVG</option><option>OB+FVG</option><option>IFVG</option><option>BB</option>
+                </select></div>
+              <div className="form-group"><label className="form-label">{t('SIGNAL_BAR')}</label>
+                <select className="form-select" value={form.signalBar} onChange={e=>update('signalBar',e.target.value)}>
+                  <option value="">—</option><option>H2触发</option><option>L2触发</option><option>未等到</option>
+                </select></div>
+              <div className="form-group"><label className="form-label">{t('SWEEP_TYPE')}</label>
+                <select className="form-select" value={form.sweepType} onChange={e=>update('sweepType',e.target.value)}>
+                  <option value="">—</option><option>PDH</option><option>PDL</option><option>亚盘高</option><option>亚盘低</option><option>结构流动性</option>
+                </select></div>
+            </div>
+            <div className="form-grid-3" style={{marginTop:10}}>
+              <div className="form-group"><label className="form-label">{t('TIMEFRAME')}</label>
+                <select className="form-select" value={form.tf} onChange={e=>update('tf',e.target.value)}>
+                  <option>15M</option><option>15M+5M</option><option>5M</option>
+                </select></div>
+              <div className="form-group"><label className="form-label">{t('BE_LEVEL')}</label>
+                <select className="form-select" value={form.beLevel} onChange={e=>update('beLevel',e.target.value)}>
+                  <option value="">—</option><option>1档</option><option>2档</option><option>3档</option>
+                </select></div>
+              <div className="form-group"><label className="form-label">{t('CHOCH_PATH')}</label>
+                <select className="form-select" value={form.chochPath} onChange={e=>update('chochPath',e.target.value)}>
+                  <option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option>
+                </select></div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <div className="form-section-title">{t('CHECKLIST')}<div className="line"/></div>
+            <div className="check-grid">
+              {checkItems.map(([k,lbl]) => (
+                <div key={k} className={'check-item'+(c[k]?' on':'')} onClick={()=>toggleCheck(k)}>
+                  <div className="check-dot"/>{lbl}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="form-section">
+            <div className="form-section-title">{t('CHART_SCREENSHOTS')}<div className="line"/></div>
+            <div className="img-drop" onClick={()=>fileRef.current.click()}>
+              {t('UPLOAD_HINT')}<br/>
+              <span style={{color:'var(--fg-3)',fontSize:10}}>{t('IMG_FORMATS')}</span>
+            </div>
+            <input ref={fileRef} type="file" multiple accept="image/*" style={{display:'none'}} onChange={e=>handleFiles(e.target.files)}/>
+            {form.images.length>0 && (
+              <div className="img-grid">
+                {form.images.map((src,i)=>(
+                  <div className="img-thumb" key={i}>
+                    <img src={src}/>
+                    <button style={{position:'absolute',top:4,right:4,width:18,height:18,background:'rgba(0,0,0,0.8)',color:'#fff',border:'1px solid var(--bull)',cursor:'pointer',fontSize:10}}
+                      onClick={()=>setForm(f=>({...f, images:f.images.filter((_,j)=>j!==i)}))}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="form-section">
+            <div className="form-section-title">{t('AI_ANALYSIS')}<div className="line"/></div>
+            <textarea className="form-textarea" style={{minHeight:100,fontFamily:'var(--mono)',fontSize:11}}
+              placeholder={t('PASTE_ANALYSIS')}
+              value={form.aiAnalysis} onChange={e=>update('aiAnalysis',e.target.value)}/>
+          </div>
+
+          <div className="form-section">
+            <div className="form-section-title">{t('NOTES')}<div className="line"/></div>
+            <textarea className="form-textarea" placeholder={t('NOTES_PLACEHOLDER')}
+              value={form.notes} onChange={e=>update('notes',e.target.value)}/>
+          </div>
+
+          <div style={{display:'flex',gap:10,paddingTop:16,borderTop:'1px solid var(--line)',marginTop:6}}>
+            <button className="btn btn-primary" onClick={save}>{editingTrade?t('UPDATE'):t('SAVE')}</button>
+            <button className="btn" onClick={()=>setForm(blank())}>{t('CLEAR')}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ AI IMPORT ============
+function ImportPage({ onImport }){
+  const [json, setJson] = React.useState('');
+  const [preview, setPreview] = React.useState(null);
+  const [err, setErr] = React.useState('');
+
+  const parse = () => {
+    setErr(''); setPreview(null);
+    if (!json.trim()) { setErr('粘贴 JSON'); return; }
+    try {
+      const d = JSON.parse(json);
+      if (Array.isArray(d)) {
+        d.forEach(r => onImport({ ...r, id: r.id || Date.now()+Math.random() }));
+        alert('已导入 '+d.length+' 条');
+        setJson('');
+        return;
+      }
+      setPreview(d);
+    } catch(e){ setErr('JSON 格式错误: '+e.message); }
+  };
+
+  const confirm = () => {
+    if (!preview) return;
+    onImport({ ...preview, id: preview.id || Date.now() });
+    setJson(''); setPreview(null);
+    alert('导入成功');
+  };
+
+  const template = `{
+  "symbol": "XAUUSD",
+  "datetime": "2026-04-13T15:30",
+  "direction": "SHORT",
+  "session": "欧盘",
+  "entry": 3245.50,
+  "sl": 3252.00,
+  "exit": 3230.50,
+  "result": "WIN",
+  "pnl": 2.3,
+  "score": 85,
+  "grade": "A",
+  "gradeMom": "S",
+  "market": "结构下跌",
+  "struct": "外部结构",
+  "pattern": "信号棒触发",
+  "zone": "OB+FVG",
+  "signalBar": "L2触发",
+  "sweepType": "亚盘高",
+  "tf": "15M",
+  "checks": {"sweep":true,"bos":true,"ob":true,"fvg":true,"ob_fvg":true,"window":true,"signal_bar":true,"h2l2":true},
+  "notes": "完美L2触发"
+}`;
+
+  return (
+    <div>
+      <div className="panel">
+        <div className="panel-hd">
+          <div className="title">JSON IMPORT</div>
+          <div className="sub">MINIMAX · CLAUDE · MANUAL</div>
+        </div>
+        <div className="panel-body">
+          <div className="hint">
+            将 AI 输出的 JSON 粘贴到下方 → 点击解析 → 确认导入
+          </div>
+          <textarea className="form-textarea" style={{minHeight:220,fontFamily:'var(--mono)',fontSize:11}}
+            placeholder={template}
+            value={json} onChange={e=>setJson(e.target.value)}/>
+          {err && <div style={{color:'var(--bear)',fontFamily:'var(--mono)',fontSize:11,marginTop:10}}>[ERR] {err}</div>}
+          <div style={{display:'flex',gap:10,marginTop:14}}>
+            <button className="btn btn-primary" onClick={parse}>▶ PARSE</button>
+            <button className="btn" onClick={()=>{setJson('');setPreview(null);setErr('');}}>CLEAR</button>
+          </div>
+          {preview && (
+            <div style={{marginTop:20,padding:16,background:'var(--bg-2)',border:'1px solid var(--bull)'}}>
+              <div style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--bull)',letterSpacing:1.5,marginBottom:10}}>[ PREVIEW ]</div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,fontFamily:'var(--mono)',fontSize:11}}>
+                {[['SYMBOL',preview.symbol],['DIR',preview.direction],['ENTRY',preview.entry],['SL',preview.sl],['EXIT',preview.exit],['RESULT',preview.result],['PNL',preview.pnl?(preview.pnl>0?'+':'')+preview.pnl+'R':'—'],['GRADE',preview.grade],['MOM',preview.gradeMom],['ZONE',preview.zone],['PATTERN',preview.pattern],['SESSION',preview.session]].map(([k,v],i)=>(
+                  <div key={i}><div style={{color:'var(--fg-3)',fontSize:9,letterSpacing:1.5}}>{k}</div><div style={{color:'var(--fg)'}}>{v||'—'}</div></div>
+                ))}
+              </div>
+              <div style={{marginTop:14}}>
+                <button className="btn btn-primary" onClick={confirm}>▶ CONFIRM IMPORT</button>
+                <button className="btn" style={{marginLeft:8}} onClick={()=>setPreview(null)}>DISCARD</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="panel" style={{marginTop:14}}>
+        <div className="panel-hd">
+          <div className="title">AI PROMPT TEMPLATE</div>
+          <div className="sub">MINIMAX / CLAUDE</div>
+        </div>
+        <div className="panel-body">
+          <div className="hint" style={{marginBottom:12}}>将以下 Prompt 给 AI,发送截图+信息,它会输出标准 JSON</div>
+          <div className="code-block">{`你是 Saint 的交易记录助手。
+
+任务:从交易截图+描述中提取字段,输出标准 JSON。
+
+字段:
+- symbol: "GBPUSD" | "XAUUSD" | "BTCUSDT" | "EURUSD" | "NAS100"
+- datetime: "2026-04-13T15:30"
+- direction: "LONG" | "SHORT"
+- session: "欧盘" | "重叠" | "亚盘" | "美盘"
+- entry / sl / exit: 数字
+- result: "WIN" | "LOSS" | "BE" | ""
+- pnl: 数字(R倍数)
+- score: 0-100
+- grade: "A" | "B" | "C"
+- gradeMom: "S" | "A" | "B" | "C"
+- zone: "OB"|"FVG"|"OB+FVG"|"IFVG"|"BB"
+- pattern / signalBar / sweepType / beLevel / chochPath / tf
+- checks: {sweep,bos,ob,fvg,ob_fvg,window,signal_bar,h2l2}  均为 bool
+- notes: 字符串
+
+仅输出 JSON 对象,不要 markdown 包裹,不要解释。`}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ EXPORT & DATA SYNC ============
+function ExportPage({ trades }){
+  const [from, setFrom] = React.useState('');
+  const [to, setTo] = React.useState('');
+  const [sym, setSym] = React.useState('ALL');
+  const [noImg, setNoImg] = React.useState(true);
+  const [onlyNoAi, setOnlyNoAi] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [syncMsg, setSyncMsg] = React.useState('');
+  const restoreRef = React.useRef();
+
+  const symbols = React.useMemo(() => {
+    const s = new Set(trades.map(t => t.symbol));
+    return ['ALL', ...Array.from(s).sort()];
+  }, [trades]);
+
+  const filtered = React.useMemo(() => {
+    return trades.filter(t => {
+      if (sym !== 'ALL' && t.symbol !== sym) return false;
+      if (from && t.datetime < from) return false;
+      if (to && t.datetime > to + 'T23:59') return false;
+      if (onlyNoAi && t.aiAnalysis) return false;
+      return true;
+    });
+  }, [trades, from, to, sym, onlyNoAi]);
+
+  const buildJson = () => {
+    const data = filtered.map(t => {
+      if (!noImg) return t;
+      const copy = Object.assign({}, t);
+      delete copy.images;
+      return copy;
+    });
+    return JSON.stringify(data, null, 2);
+  };
+
+  const download = () => {
+    const json = buildJson();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const ts = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = 'saint_trades_' + ts + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const copy = () => {
+    navigator.clipboard.writeText(buildJson()).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const jsonSize = React.useMemo(() => {
+    const bytes = new Blob([buildJson()]).size;
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+    return (bytes/1048576).toFixed(1) + ' MB';
+  }, [filtered, noImg]);
+
+  const backupAll = () => {
+    const raw = localStorage.getItem('saint_v6') || '[]';
+    const blob = new Blob([raw], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const ts = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = 'saint_backup_' + ts + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    setSyncMsg('BACKUP OK - ' + JSON.parse(raw).length + ' records saved');
+    setTimeout(() => setSyncMsg(''), 3000);
+  };
+
+  const restoreAll = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!Array.isArray(data)) { setSyncMsg('ERROR: not an array'); return; }
+        localStorage.setItem('saint_v6', JSON.stringify(data));
+        setSyncMsg('RESTORE OK - ' + data.length + ' records loaded. Refreshing...');
+        setTimeout(() => location.reload(), 1500);
+      } catch(err) {
+        setSyncMsg('ERROR: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const [githubToken, setGithubToken] = React.useState(() => localStorage.getItem('saint_gh_token') || '');
+  const [githubRepo, setGithubRepo] = React.useState(() => localStorage.getItem('saint_gh_repo') || '');
+  const [ghSyncing, setGhSyncing] = React.useState(false);
+  const [ghMsg, setGhMsg] = React.useState('');
+
+  const saveGhConfig = () => {
+    localStorage.setItem('saint_gh_token', githubToken);
+    localStorage.setItem('saint_gh_repo', githubRepo);
+    setGhMsg('配置已保存');
+    setTimeout(() => setGhMsg(''), 2000);
+  };
+
+  const syncToGithub = async () => {
+    if (!githubToken || !githubRepo) { setGhMsg('ERROR: 请先填写 Token 和仓库名'); return; }
+    setGhSyncing(true);
+    setGhMsg('同步中...');
+    try {
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(trades, null, 2))));
+      const [owner, repo] = githubRepo.split('/');
+      const path = 'trades.json';
+      // Get current SHA if file exists
+      let sha = '';
+      try {
+        const check = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+          headers: { 'Authorization': 'token ' + githubToken, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (check.ok) { const d = await check.json(); sha = d.sha; }
+      } catch(e){}
+      const body = { message: 'saint: sync trades ' + new Date().toISOString().slice(0,16), content, ...(sha ? {sha} : {}) };
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+        method: 'PUT',
+        headers: { 'Authorization': 'token ' + githubToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) { setGhMsg('✅ 同步成功 — ' + trades.length + ' 条记录 → ' + githubRepo + '/trades.json'); }
+      else { const err = await res.json(); setGhMsg('ERROR: ' + (err.message || res.status)); }
+    } catch(e) { setGhMsg('ERROR: ' + e.message); }
+    setGhSyncing(false);
+    setTimeout(() => setGhMsg(''), 5000);
+  };
+
+  const downloadClaudeReady = () => {
+    const clean = filtered.map(t => {
+      const {images, ...rest} = t;
+      return {...rest, imageCount: (t.images||[]).length};
+    });
+    const blob = new Blob([JSON.stringify(clean, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'saint_for_claude_' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadWeekly = () => {
+    const weeks = {};
+    filtered.forEach(t => {
+      if (!t.datetime) return;
+      const d = new Date(t.datetime);
+      const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay()+6)%7));
+      const key = mon.toISOString().slice(0,10);
+      if (!weeks[key]) weeks[key] = [];
+      weeks[key].push(t);
+    });
+    const summary = Object.entries(weeks).map(([week, ts]) => {
+      const wins = ts.filter(t=>t.result==='WIN');
+      const losses = ts.filter(t=>t.result==='LOSS');
+      const pnl = ts.reduce((s,t)=>s+(t.pnl||0),0);
+      return { week, trades: ts.length, wins: wins.length, losses: losses.length, pnl: +pnl.toFixed(2), records: noImg ? ts.map(t=>{const{images,...r}=t;return r;}) : ts };
+    });
+    const blob = new Blob([JSON.stringify(summary, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'saint_weekly_' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    React.createElement('div', null,
+
+      React.createElement('div', {className:'panel'},
+        React.createElement('div', {className:'panel-hd'},
+          React.createElement('div', {className:'title'}, '☁ CLOUD SYNC'),
+          React.createElement('div', {className:'sub'}, 'GITHUB · PROJECT LIBRARY')
+        ),
+        React.createElement('div', {className:'panel-body'},
+          React.createElement('div', {className:'hint'}, '将 trades.json 同步到 GitHub 仓库 → Claude Project Library 直接读取 → 无需手动传文件'),
+          React.createElement('div', {className:'form-grid-2', style:{marginTop:14}},
+            React.createElement('div', {className:'form-group'},
+              React.createElement('label', {className:'form-label'}, 'GITHUB TOKEN'),
+              React.createElement('input', {type:'password', className:'form-input', placeholder:'ghp_xxxxxxxxxxxx', value:githubToken, onChange:e=>setGithubToken(e.target.value)})
+            ),
+            React.createElement('div', {className:'form-group'},
+              React.createElement('label', {className:'form-label'}, 'REPO (owner/repo)'),
+              React.createElement('input', {type:'text', className:'form-input', placeholder:'saint-user/saint-trading', value:githubRepo, onChange:e=>setGithubRepo(e.target.value)})
+            )
+          ),
+          React.createElement('div', {style:{display:'flex',gap:10,marginTop:12}},
+            React.createElement('button', {className:'btn btn-primary', onClick:syncToGithub, disabled:ghSyncing},
+              ghSyncing ? '同步中...' : ('↑ 同步到 GitHub (' + trades.length + ' 条)')
+            ),
+            React.createElement('button', {className:'btn', onClick:saveGhConfig}, '保存配置'),
+          ),
+          ghMsg ? React.createElement('div', {style:{marginTop:10,fontFamily:'var(--mono)',fontSize:11,color:ghMsg.startsWith('ERROR')?'var(--bear)':'var(--bull)'}}, ghMsg) : null
+        )
+      ),
+
+      React.createElement('div', {className:'panel', style:{marginTop:14}},
+        React.createElement('div', {className:'panel-hd'},
+          React.createElement('div', {className:'title'}, 'BACKUP / RESTORE'),
+          React.createElement('div', {className:'sub'}, 'CROSS-BROWSER · LOCAL')
+        ),
+        React.createElement('div', {className:'panel-body'},
+          React.createElement('div', {className:'hint'}, '跨浏览器同步：在有数据的浏览器点 BACKUP → 在另一个浏览器点 RESTORE 选择文件'),
+          React.createElement('div', {style:{display:'flex',gap:10,marginTop:14}},
+            React.createElement('button', {className:'btn btn-primary', onClick:backupAll}, 'FULL BACKUP (' + trades.length + ' records)'),
+            React.createElement('button', {className:'btn', onClick:function(){ restoreRef.current.click(); }}, 'RESTORE FROM FILE'),
+            React.createElement('input', {ref:restoreRef, type:'file', accept:'.json', style:{display:'none'}, onChange:restoreAll})
+          ),
+          syncMsg ? React.createElement('div', {style:{marginTop:10,fontFamily:'var(--mono)',fontSize:11,color:syncMsg.startsWith('ERROR')?'var(--bear)':'var(--bull)'}}, syncMsg) : null
+        )
+      ),
+
+      React.createElement('div', {className:'panel', style:{marginTop:14}},
+        React.createElement('div', {className:'panel-hd'},
+          React.createElement('div', {className:'title'}, 'JSON EXPORT'),
+          React.createElement('div', {className:'sub'}, 'CLAUDE · PROJECT LIBRARY · HERMES')
+        ),
+        React.createElement('div', {className:'panel-body'},
+          React.createElement('div', {className:'hint'}, '筛选记录 → 导出 JSON → 发给 Claude 分析 / 批量写入 Project Library'),
+          React.createElement('div', {className:'form-section', style:{marginTop:16}},
+            React.createElement('div', {className:'form-section-title'}, 'FILTERS', React.createElement('div', {className:'line'})),
+            React.createElement('div', {className:'form-grid-4'},
+              React.createElement('div', {className:'form-group'},
+                React.createElement('label', {className:'form-label'}, 'FROM'),
+                React.createElement('input', {type:'date', className:'form-input', value:from, onChange:e=>setFrom(e.target.value)})
+              ),
+              React.createElement('div', {className:'form-group'},
+                React.createElement('label', {className:'form-label'}, 'TO'),
+                React.createElement('input', {type:'date', className:'form-input', value:to, onChange:e=>setTo(e.target.value)})
+              ),
+              React.createElement('div', {className:'form-group'},
+                React.createElement('label', {className:'form-label'}, 'SYMBOL'),
+                React.createElement('select', {className:'form-select', value:sym, onChange:e=>setSym(e.target.value)},
+                  symbols.map(s => React.createElement('option', {key:s, value:s}, s))
+                )
+              ),
+              React.createElement('div', {className:'form-group', style:{display:'flex',flexDirection:'column',justifyContent:'flex-end'}},
+                React.createElement('button', {className:'btn btn-sm', onClick:()=>{setFrom('');setTo('');setSym('ALL');setOnlyNoAi(false);}}, 'RESET')
+              )
+            )
+          ),
+          React.createElement('div', {className:'form-section', style:{marginTop:12}},
+            React.createElement('div', {className:'form-section-title'}, 'OPTIONS', React.createElement('div', {className:'line'})),
+            React.createElement('div', {style:{display:'flex',gap:24,flexWrap:'wrap'}},
+              React.createElement('label', {style:{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontFamily:'var(--mono)',fontSize:11,color:'var(--fg-1)'}},
+                React.createElement('input', {type:'checkbox', checked:noImg, onChange:()=>setNoImg(!noImg)}), '排除图片 (减小体积)'
+              ),
+              React.createElement('label', {style:{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontFamily:'var(--mono)',fontSize:11,color:'var(--fg-1)'}},
+                React.createElement('input', {type:'checkbox', checked:onlyNoAi, onChange:()=>setOnlyNoAi(!onlyNoAi)}), '仅未分析 (无 aiAnalysis)'
+              )
+            )
+          ),
+          React.createElement('div', {style:{marginTop:16,padding:14,background:'var(--bg-2)',border:'1px solid var(--line-2)',borderRadius:'var(--radius)',fontFamily:'var(--mono)',fontSize:11,display:'flex',gap:24,flexWrap:'wrap'}},
+            React.createElement('span', null, React.createElement('span', {style:{color:'var(--fg-3)'}}, 'RECORDS: '), React.createElement('span', {style:{color:'var(--bull)'}}, filtered.length), React.createElement('span', {style:{color:'var(--fg-3)'}}, ' / ' + trades.length)),
+            React.createElement('span', null, React.createElement('span', {style:{color:'var(--fg-3)'}}, 'SIZE: '), React.createElement('span', {style:{color:'var(--cyan)'}}, jsonSize))
+          ),
+          React.createElement('div', {style:{display:'flex',gap:10,marginTop:14,flexWrap:'wrap'}},
+            React.createElement('button', {className:'btn btn-primary', onClick:download, disabled:!filtered.length}, '↓ DOWNLOAD .JSON'),
+            React.createElement('button', {className:'btn', onClick:downloadClaudeReady, disabled:!filtered.length}, '↓ CLAUDE-READY (无图)'),
+            React.createElement('button', {className:'btn', onClick:downloadWeekly, disabled:!filtered.length}, '↓ 按周分组 JSON'),
+            React.createElement('button', {className:'btn', onClick:copy, disabled:!filtered.length}, copied ? '✓ COPIED' : 'COPY TO CLIPBOARD')
+          )
+        )
+      ),
+
+      React.createElement('div', {className:'panel', style:{marginTop:14}},
+        React.createElement('div', {className:'panel-hd'},
+          React.createElement('div', {className:'title'}, 'PREVIEW'),
+          React.createElement('div', {className:'sub'}, filtered.length + ' RECORDS')
+        ),
+        React.createElement('div', {className:'panel-body'},
+          React.createElement('div', {style:{maxHeight:400,overflow:'auto'}},
+            React.createElement('table', {className:'tbl', style:{fontSize:10}},
+              React.createElement('thead', null,
+                React.createElement('tr', null,
+                  React.createElement('th', null, 'DATE'), React.createElement('th', null, 'SYM'),
+                  React.createElement('th', null, 'DIR'), React.createElement('th', null, 'ENTRY'),
+                  React.createElement('th', null, 'SL'), React.createElement('th', null, 'EXIT'),
+                  React.createElement('th', null, 'PNL'), React.createElement('th', null, 'RESULT'),
+                  React.createElement('th', null, 'GRADE'), React.createElement('th', null, 'AI')
+                )
+              ),
+              React.createElement('tbody', null,
+                filtered.slice(0,50).map(t =>
+                  React.createElement('tr', {key:t.id},
+                    React.createElement('td', {style:{fontFamily:'var(--mono)'}}, (t.datetime||'').slice(0,10)),
+                    React.createElement('td', null, t.symbol),
+                    React.createElement('td', {style:{color:t.direction==='LONG'?'var(--bull)':'var(--bear)'}}, t.direction),
+                    React.createElement('td', {style:{fontFamily:'var(--mono)'}}, t.entry),
+                    React.createElement('td', {style:{fontFamily:'var(--mono)'}}, t.sl),
+                    React.createElement('td', {style:{fontFamily:'var(--mono)'}}, t.exit||'—'),
+                    React.createElement('td', {style:{fontFamily:'var(--mono)',color:t.pnl>0?'var(--bull)':t.pnl<0?'var(--bear)':'var(--fg-2)'}}, t.pnl!=null?(t.pnl>0?'+':'')+t.pnl+'R':'—'),
+                    React.createElement('td', null, t.result||'OPEN'),
+                    React.createElement('td', null, t.grade||'—'),
+                    React.createElement('td', {style:{color:t.aiAnalysis?'var(--bull)':'var(--fg-3)'}}, t.aiAnalysis?'✓':'—')
+                  )
+                ),
+                filtered.length > 50 ? React.createElement('tr', null, React.createElement('td', {colSpan:10, style:{textAlign:'center',color:'var(--fg-3)',padding:8}}, '... +' + (filtered.length-50) + ' more')) : null,
+                !filtered.length ? React.createElement('tr', null, React.createElement('td', {colSpan:10, style:{textAlign:'center',color:'var(--fg-3)',padding:20}}, 'NO MATCHING RECORDS')) : null
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+Object.assign(window, { Record, ImportPage, ExportPage });
+
+</script>
+
+<script type="text/babel">
+// i18n dictionary
+const DICT = {
+  zh: {
+    DASHBOARD:'仪表盘 // 总览', NEW_ORDER:'新订单 // 录入', AI_IMPORT:'AI导入 // JSON',
+    HISTORY:'历史 // 账本', ANALYTICS:'分析 // 深度', PLAYBOOK:'交易手册 // 系统',
+    EXPORT:'导出 // JSON',
+    TOTAL:'总计', WR:'胜率', TRADES:'笔数',
+    THEME_DARK:'暗色', THEME_LIGHT:'亮色', LANG:'中文/EN',
+    // KPI labels
+    TOTAL_PNL:'总盈亏', WIN_RATE:'胜率', AVG_WIN:'均盈', AVG_LOSS:'均亏',
+    RR_RATIO:'盈亏比', TOTAL_TRADES:'总交易', NET_PNL:'净盈亏', NET_R:'净R',
+    FILTERED:'已筛选', EXPECTANCY:'期望值', PROFIT_FACTOR:'盈利因子',
+    MAX_WIN_STREAK:'最大连胜', MAX_LOSS_STREAK:'最大连亏',
+    // KPI subs
+    CLOSED:'已平仓', OPEN:'持仓中', MAX_STREAK:'最大连续', PER_TRADE:'每笔',
+    OF:'/',
+    // Dashboard panels
+    EQUITY_CURVE:'资金曲线 [实时]', CUM_R:'累计R', POINTS:'点',
+    OVERALL:'总览', CALENDAR:'日历', TODAY:'今日', THIS_WEEK:'本周',
+    SESSION_PERFORMANCE:'盘口表现', CUM_R_BY_SESSION:'各盘口累计R',
+    TOP_SYMBOLS:'热门品种', BY_CUM_R:'按累计R',
+    RECENT_ORDERS:'最近订单', LAST_8:'最近8笔 · 实时',
+    NO_DATA:'[ 无数据 ]', NO_TRADES_TODAY:'[ 今日无交易 ]',
+    NO_MATCHING:'[ 无匹配记录 ]',
+    PREV:'‹ 上月', NOW:'本月', NEXT:'下月 ›',
+    // History
+    FILTER:'筛选', ALL_SYMBOLS:'全部品种', ALL_RESULTS:'全部结果',
+    ALL_GRADES:'全部评级', ALL_DIR:'全部方向', ALL_ZONES:'全部区域',
+    RESET:'重置', ROWS:'行',
+    // Table headers
+    TIME:'时间', SYMBOL:'品种', DIR:'方向', SESSION:'盘口',
+    ENTRY:'入场', SL:'止损', EXIT:'出场', RESULT:'结果',
+    ZONE:'区域', PATTERN:'形态', MOM:'动能', GRADE:'评级', ACT:'操作',
+    SCORE:'评分', PNL:'盈亏',
+    // Buttons
+    EDIT:'编辑', DEL:'删除', DELETE_CONFIRM:'确认删除?',
+    SAVE:'▶ 保存', UPDATE:'▶ 更新', CLEAR:'清空', CANCEL:'取消',
+    // Form sections
+    BASIC:'基本信息', PRICES:'价格', v6_STRATEGY:'v6.0 策略',
+    CHECKLIST:'清单', CHART_SCREENSHOTS:'图表截图', AI_ANALYSIS:'AI分析',
+    NOTES:'备注', UPLOAD_HINT:'[+] 上传 / 拖拽 / 粘贴 (Ctrl+V)',
+    IMG_FORMATS:'JPG · PNG · WebP · 最多6张',
+    PASTE_ANALYSIS:'粘贴 Claude / MiniMax 的完整分析报告...',
+    NOTES_PLACEHOLDER:'入场逻辑 / 犯错原因 / 改进方向...',
+    // Form labels
+    STOP_LOSS:'止损', TP1:'止盈1', TP2:'止盈2',
+    DATETIME:'时间', DIRECTION:'方向',
+    MARKET:'市场', STRUCT:'结构', MOMENTUM:'动能',
+    SIGNAL_BAR:'信号棒', SWEEP_TYPE:'扫损类型', BE_LEVEL:'保本档位',
+    CHOCH_PATH:'CHoCH路径', TIMEFRAME:'时间周期',
+    LONG:'多头 LONG', SHORT:'空头 SHORT',
+    AUTO:'自动',
+    // Result status
+    WIN:'WIN', LOSS:'LOSS', BE:'BE', REVIEW:'复盘', MISSED:'未做',
+    // Record
+    NEW_ORDER_TITLE:'新建订单', UPDATE_ORDER:'更新订单',
+    AUTO_SCORE:'自动评分 · AI分析',
+    EDITING:'[编辑中]',
+    REQUIRED_FIELDS:'必填:时间/入场价/止损价',
+    // Analytics
+    EQUITY_FULL:'资金曲线 [完整历史]', CLOSED_TRADES:'笔已平仓',
+    SYMBOL_PERF:'品种表现', GRADE_WR:'评级胜率',
+    MOMENTUM_WR:'动能胜率', ZONE_WR:'区域胜率',
+    PATTERN_PNL:'形态盈亏', TOP_8:'前8形态',
+    EXEC_RADAR:'执行雷达', CHECKLIST_COMP:'清单合规',
+    HEATMAP:'盘口×方向热力图', PNL_IN_R:'盈亏(R)',
+    // Playbook
+    SCORE_SYSTEM:'评分系统', PTS_TOTAL:'满分100',
+    CRITERION:'评分项', MAX:'满分', STANDARD:'标准',
+    NEW_RULES:'v6.0 新规', SMT_ENHANCED:'SMT增强',
+    POSITION_SIZING:':: 仓位管理 ::',
+    FULL:'满仓', HALF:'半仓', SKIP:'跳过',
+    TRADING_WINDOWS:'交易窗口 [UTC+8]', PRIME_SESSIONS:'主力时段',
+    ASIA_OPEN:'亚盘开盘', EU_OPEN:'欧盘开盘', OVERLAP:'重叠时段', US_CLOSE:'美盘收盘',
+    LIQUIDITY_BUILD:'流动性构建', PRIME_ENTRY:'主力入场', MAX_VOLATILITY:'最大波动', FADE_AVOID:'回调 / 回避',
+    // Import/Export
+    PARSE:'解析', CONFIRM_IMPORT:'确认导入', IMPORT_TPL:'模板',
+    PASTE_JSON:'粘贴 JSON',
+    EXPORT_BTN:'导出 JSON', IMPORT_ALL:'导入全部',
+    // Day detail
+    DAY_DETAIL:'[ 日详情 ]', WL:'胜/负',
+  },
+  en: {
+    DASHBOARD:'DASHBOARD // OVERVIEW', NEW_ORDER:'NEW_ORDER // ENTRY', AI_IMPORT:'AI_IMPORT // JSON',
+    HISTORY:'HISTORY // LEDGER', ANALYTICS:'ANALYTICS // DEEP', PLAYBOOK:'PLAYBOOK // SYSTEM',
+    EXPORT:'EXPORT // JSON',
+    TOTAL:'TOTAL', WR:'WR', TRADES:'TRADES',
+    THEME_DARK:'DARK', THEME_LIGHT:'LIGHT', LANG:'EN/中文',
+    TOTAL_PNL:'TOTAL PNL', WIN_RATE:'WIN RATE', AVG_WIN:'AVG WIN', AVG_LOSS:'AVG LOSS',
+    RR_RATIO:'R:R RATIO', TOTAL_TRADES:'TOTAL TRADES', NET_PNL:'NET PNL', NET_R:'NET R',
+    FILTERED:'FILTERED', EXPECTANCY:'EXPECTANCY', PROFIT_FACTOR:'PROFIT FACTOR',
+    MAX_WIN_STREAK:'MAX WIN STREAK', MAX_LOSS_STREAK:'MAX LOSS STREAK',
+    CLOSED:'CLOSED', OPEN:'OPEN', MAX_STREAK:'MAX STREAK', PER_TRADE:'PER TRADE',
+    OF:'OF',
+    EQUITY_CURVE:'EQUITY CURVE [REAL-TIME]', CUM_R:'CUM_R', POINTS:'POINTS',
+    OVERALL:'OVERALL', CALENDAR:'CALENDAR', TODAY:'TODAY', THIS_WEEK:'THIS WEEK',
+    SESSION_PERFORMANCE:'SESSION PERFORMANCE', CUM_R_BY_SESSION:'CUM R BY SESSION',
+    TOP_SYMBOLS:'TOP SYMBOLS', BY_CUM_R:'BY CUM R',
+    RECENT_ORDERS:'RECENT ORDERS', LAST_8:'LAST 8 · LIVE',
+    NO_DATA:'[ NO DATA ]', NO_TRADES_TODAY:'[ NO TRADES TODAY ]',
+    NO_MATCHING:'[ NO MATCHING RECORDS ]',
+    PREV:'‹ PREV', NOW:'NOW', NEXT:'NEXT ›',
+    FILTER:'FILTER', ALL_SYMBOLS:'ALL SYMBOLS', ALL_RESULTS:'ALL RESULTS',
+    ALL_GRADES:'ALL GRADES', ALL_DIR:'ALL DIR', ALL_ZONES:'ALL ZONES',
+    RESET:'RESET', ROWS:'ROWS',
+    TIME:'TIME', SYMBOL:'SYMBOL', DIR:'DIR', SESSION:'SESSION',
+    ENTRY:'ENTRY', SL:'SL', EXIT:'EXIT', RESULT:'RESULT',
+    ZONE:'ZONE', PATTERN:'PATTERN', MOM:'MOM', GRADE:'GRADE', ACT:'ACT',
+    SCORE:'SCORE', PNL:'PNL',
+    EDIT:'EDIT', DEL:'DEL', DELETE_CONFIRM:'DELETE?',
+    SAVE:'▶ SAVE', UPDATE:'▶ UPDATE', CLEAR:'CLEAR', CANCEL:'CANCEL',
+    BASIC:'BASIC', PRICES:'PRICES', v6_STRATEGY:'v6.0 STRATEGY',
+    CHECKLIST:'CHECKLIST', CHART_SCREENSHOTS:'CHART SCREENSHOTS', AI_ANALYSIS:'AI ANALYSIS',
+    NOTES:'NOTES', UPLOAD_HINT:'[+] UPLOAD / DRAG / PASTE (Ctrl+V)',
+    IMG_FORMATS:'JPG · PNG · WebP · MAX 6',
+    PASTE_ANALYSIS:'Paste Claude / MiniMax analysis report...',
+    NOTES_PLACEHOLDER:'Entry logic / Mistakes / Improvements...',
+    STOP_LOSS:'STOP LOSS', TP1:'TP1', TP2:'TP2',
+    DATETIME:'DATETIME', DIRECTION:'DIRECTION',
+    MARKET:'MARKET', STRUCT:'STRUCT', MOMENTUM:'MOMENTUM',
+    SIGNAL_BAR:'SIGNAL BAR', SWEEP_TYPE:'SWEEP TYPE', BE_LEVEL:'BE LEVEL',
+    CHOCH_PATH:'CHoCH PATH', TIMEFRAME:'TIMEFRAME',
+    LONG:'LONG', SHORT:'SHORT',
+    AUTO:'AUTO',
+    WIN:'WIN', LOSS:'LOSS', BE:'BE', REVIEW:'REVIEW', MISSED:'MISSED',
+    NEW_ORDER_TITLE:'NEW ORDER', UPDATE_ORDER:'UPDATE ORDER',
+    AUTO_SCORE:'AUTO-SCORE · AI-ANALYSIS',
+    EDITING:'[EDITING]',
+    REQUIRED_FIELDS:'Required: datetime/entry/sl',
+    EQUITY_FULL:'EQUITY CURVE [FULL HISTORY]', CLOSED_TRADES:'CLOSED TRADES',
+    SYMBOL_PERF:'SYMBOL PERFORMANCE', GRADE_WR:'GRADE WIN RATE',
+    MOMENTUM_WR:'MOMENTUM WIN RATE', ZONE_WR:'ZONE WIN RATE',
+    PATTERN_PNL:'PATTERN PNL', TOP_8:'TOP 8 PATTERNS',
+    EXEC_RADAR:'EXECUTION RADAR', CHECKLIST_COMP:'CHECKLIST COMPLIANCE',
+    HEATMAP:'SESSION × DIRECTION HEATMAP', PNL_IN_R:'PNL IN R',
+    SCORE_SYSTEM:'SCORE SYSTEM', PTS_TOTAL:'100 PTS TOTAL',
+    CRITERION:'CRITERION', MAX:'MAX', STANDARD:'STANDARD',
+    NEW_RULES:'v6.0 NEW RULES', SMT_ENHANCED:'SMT ENHANCED',
+    POSITION_SIZING:':: POSITION SIZING ::',
+    FULL:'FULL', HALF:'HALF', SKIP:'SKIP',
+    TRADING_WINDOWS:'TRADING WINDOWS [UTC+8]', PRIME_SESSIONS:'PRIME SESSIONS',
+    ASIA_OPEN:'ASIA OPEN', EU_OPEN:'EU OPEN', OVERLAP:'OVERLAP', US_CLOSE:'US CLOSE',
+    LIQUIDITY_BUILD:'LIQUIDITY BUILD', PRIME_ENTRY:'PRIME ENTRY', MAX_VOLATILITY:'MAX VOLATILITY', FADE_AVOID:'FADE / AVOID',
+    PARSE:'PARSE', CONFIRM_IMPORT:'CONFIRM IMPORT', IMPORT_TPL:'TEMPLATE',
+    PASTE_JSON:'Paste JSON',
+    EXPORT_BTN:'EXPORT JSON', IMPORT_ALL:'IMPORT ALL',
+    DAY_DETAIL:'[ DAY_DETAIL ]', WL:'W / L',
+  }
+};
+const I18nCtx = React.createContext({ lang:'en', t:(k)=>k, setLang:()=>{} });
+function useI18n(){ return React.useContext(I18nCtx); }
+
+function resultTagClass(result) {
+  if (result === 'WIN') return 'tag-win';
+  if (result === 'LOSS') return 'tag-loss';
+  if (result === 'BE') return 'tag-be';
+  if (result === 'REVIEW') return 'tag-review';
+  if (result === 'MISSED') return 'tag-missed';
+  return 'tag-c';
+}
+
+function ResultTag({ result, t }) {
+  const label = result ? (t ? t(result) : result) : (t ? t('OPEN') : 'OPEN');
+  return <span className={'tag ' + resultTagClass(result)}>{label}</span>;
+}
+
+function useTheme(){
+  const [theme, setTheme] = React.useState(() => localStorage.getItem('saint_theme') || 'dark');
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('saint_theme', theme);
+  }, [theme]);
+  return [theme, setTheme];
+}
+function useLang(){
+  const [lang, setLang] = React.useState(() => localStorage.getItem('saint_lang') || 'en');
+  React.useEffect(() => { localStorage.setItem('saint_lang', lang); }, [lang]);
+  return [lang, setLang];
+}
+
+const PAGE_KEYS = {
+  dashboard:'DASHBOARD', record:'NEW_ORDER', import:'AI_IMPORT',
+  history:'HISTORY', analysis:'ANALYTICS', playbook:'PLAYBOOK',
+  export:'EXPORT'
+};
+
+const PAGE_TITLES = {
+  dashboard: 'DASHBOARD // OVERVIEW',
+  record:    'NEW_ORDER // ENTRY',
+  import:    'AI_IMPORT // JSON',
+  history:   'HISTORY // LEDGER',
+  analysis:  'ANALYTICS // DEEP',
+  playbook:  'PLAYBOOK // SYSTEM',
+  export:    'EXPORT // JSON',
+};
+
+function App(){
+  const [trades, setTrades] = useTrades();
+  const [page, setPage] = React.useState(() => localStorage.getItem('saint_page') || 'dashboard');
+  const [drawer, setDrawer] = React.useState(false);
+  const [editing, setEditing] = React.useState(null);
+  const [theme, setTheme] = useTheme();
+  const [lang, setLang] = useLang();
+  const t = React.useCallback((k) => (DICT[lang]&&DICT[lang][k]) || k, [lang]);
+
+  React.useEffect(() => { localStorage.setItem('saint_page', page); }, [page]);
+  React.useEffect(() => { window.scrollTo(0,0); }, [page]);
+
+  const stats = React.useMemo(() => computeStats(trades), [trades]);
+
+  const handleSave = (rec) => {
+    const idx = trades.findIndex(t => t.id === rec.id);
+    let next;
+    if (idx >= 0) { next = trades.slice(); next[idx] = rec; }
+    else next = [rec, ...trades];
+    next.sort((a,b) => new Date(b.datetime) - new Date(a.datetime));
+    setTrades(next);
+    setEditing(null);
+    setPage('history');
+  };
+
+  const handleDelete = (id) => {
+    setTrades(trades.filter(t => t.id !== id));
+  };
+
+  const handleEdit = (t) => {
+    setEditing(t);
+    setPage('record');
+  };
+
+  const handleImport = (rec) => {
+    const norm = {
+      id: rec.id || Date.now()+Math.random(),
+      symbol: rec.symbol || 'XAUUSD',
+      datetime: rec.datetime || new Date().toISOString().slice(0,16),
+      direction: rec.direction || 'LONG',
+      session: rec.session || '',
+      entry: +rec.entry || 0,
+      sl: +rec.sl || 0,
+      tp1: rec.tp1 ? +rec.tp1 : null,
+      tp2: rec.tp2 ? +rec.tp2 : null,
+      exit: rec.exit ? +rec.exit : null,
+      result: rec.result || '',
+      pnl: rec.pnl != null ? +rec.pnl : null,
+      score: rec.score || null,
+      grade: rec.grade || '',
+      gradeMom: rec.gradeMom || '',
+      market: rec.market || '',
+      struct: rec.struct || '',
+      pattern: rec.pattern || '',
+      zone: rec.zone || '',
+      signalBar: rec.signalBar || '',
+      sweepType: rec.sweepType || '',
+      beLevel: rec.beLevel || '',
+      chochPath: rec.chochPath || '',
+      tf: rec.tf || '15M',
+      checks: rec.checks || {},
+      aiAnalysis: rec.aiAnalysis || '',
+      notes: rec.notes || '',
+      images: rec.images || []
+    };
+    const next = [norm, ...trades].sort((a,b)=>new Date(b.datetime)-new Date(a.datetime));
+    setTrades(next);
+  };
+
+  return (
+    <I18nCtx.Provider value={{ lang, t, setLang }}>
+    <div className="app">
+      <Sidebar page={page} setPage={setPage} stats={stats} open={drawer} setOpen={setDrawer}/>
+      <main className="main">
+        <Topbar title={DICT[lang][PAGE_KEYS[page]]||page.toUpperCase()} stats={stats} onMenu={() => setDrawer(true)} theme={theme} setTheme={setTheme} lang={lang} setLang={setLang}/>
+        <div className="content">
+          {page === 'dashboard' && <Dashboard trades={trades}/>}
+          {page === 'record'    && <Record trades={trades} onSave={handleSave} editingTrade={editing} onCancelEdit={() => setEditing(null)}/>}
+          {page === 'import'    && <ImportPage onImport={handleImport}/>}
+          {page === 'export'    && <ExportPage trades={trades}/>}
+          {page === 'history'   && <History trades={trades} onDelete={handleDelete} onEdit={handleEdit}/>}
+          {page === 'analysis'  && <Analytics trades={trades}/>}
+          {page === 'playbook'  && <Playbook/>}
+        </div>
+      </main>
+      <button className="fab" onClick={() => { setEditing(null); setPage('record'); }}>+</button>
+    </div>
+    </I18nCtx.Provider>
+  );
+}
+
+function mount(){
+  if (typeof useTrades === 'undefined' || typeof Dashboard === 'undefined' || typeof Sidebar === 'undefined' || typeof Record === 'undefined' || typeof ExportPage === 'undefined') {
+    setTimeout(mount, 60);
+    return;
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+}
+mount();
+</script>
+</body>
+</html>
